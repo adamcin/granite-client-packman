@@ -1,0 +1,106 @@
+<!--
+  ~ This is free and unencumbered software released into the public domain.
+  ~
+  ~ Anyone is free to copy, modify, publish, use, compile, sell, or
+  ~ distribute this software, either in source code form or as a compiled
+  ~ binary, for any purpose, commercial or non-commercial, and by any
+  ~ means.
+  ~
+  ~ In jurisdictions that recognize copyright laws, the author or authors
+  ~ of this software dedicate any and all copyright interest in the
+  ~ software to the public domain. We make this dedication for the benefit
+  ~ of the public at large and to the detriment of our heirs and
+  ~ successors. We intend this dedication to be an overt act of
+  ~ relinquishment in perpetuity of all present and future rights to this
+  ~ software under copyright law.
+  ~
+  ~ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+  ~ EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+  ~ MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+  ~ IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+  ~ OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+  ~ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+  ~ OTHER DEALINGS IN THE SOFTWARE.
+  ~
+  ~ For more information, please refer to <http://unlicense.org/>
+  -->
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN">
+<html><head>
+    <style type="text/css">
+        body {
+            background-color: white;
+            font-family: verdana, arial, sans-serif;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+        div {
+            font-family: courier, monospace;
+            font-size: 11px;
+        }
+    </style>
+    <script type="text/javascript">
+        function onStatus(pid, stat, p, max, msg) {
+            window.parent.cqPackageShareClient.onStatus(pid, stat, p, max, msg);
+            window.scrollTo(0, 1000000);
+        }
+    </script></head>
+<body><h2>Installing content</h2><div><br><span class="error">Error during processing.</span><br><code><pre>
+org.apache.jackrabbit.core.data.DataStoreException: Record not found: bbcb42b4fcf720e093ee83c777c6b69529e6f0cd
+	at com.day.crx.core.data.ClusterDataStore.getRecord(ClusterDataStore.java:334)
+	at org.apache.jackrabbit.core.value.BLOBInDataStore.getDataRecord(BLOBInDataStore.java:140)
+	at org.apache.jackrabbit.core.value.BLOBInDataStore.getStream(BLOBInDataStore.java:103)
+	at org.apache.jackrabbit.core.PropertyImpl.getStream(PropertyImpl.java:527)
+	at com.day.jcr.vault.packaging.impl.JcrPackageImpl.getPackage(JcrPackageImpl.java:296)
+	at com.day.jcr.vault.packaging.impl.JcrPackageImpl.extract(JcrPackageImpl.java:352)
+	at com.day.jcr.vault.packaging.impl.JcrPackageImpl.install(JcrPackageImpl.java:336)
+	at com.day.crx.packaging.impl.J2EEPackageManager.consoleInstall(J2EEPackageManager.java:327)
+	at com.day.crx.packaging.impl.J2EEPackageManager.doPost(J2EEPackageManager.java:173)
+	at com.day.crx.packaging.impl.PackageManagerServlet.doPost(PackageManagerServlet.java:144)
+	at javax.servlet.http.HttpServlet.service(HttpServlet.java:727)
+	at javax.servlet.http.HttpServlet.service(HttpServlet.java:820)
+	at org.apache.felix.http.base.internal.handler.ServletHandler.doHandle(ServletHandler.java:96)
+	at org.apache.felix.http.base.internal.handler.ServletHandler.handle(ServletHandler.java:79)
+	at org.apache.felix.http.base.internal.dispatch.ServletPipeline.handle(ServletPipeline.java:42)
+	at org.apache.felix.http.base.internal.dispatch.InvocationFilterChain.doFilter(InvocationFilterChain.java:49)
+	at org.apache.felix.http.base.internal.dispatch.HttpFilterChain.doFilter(HttpFilterChain.java:33)
+	at org.apache.sling.i18n.impl.I18NFilter.doFilter(I18NFilter.java:127)
+	at org.apache.felix.http.base.internal.handler.FilterHandler.doHandle(FilterHandler.java:88)
+	at org.apache.felix.http.base.internal.handler.FilterHandler.handle(FilterHandler.java:76)
+	at org.apache.felix.http.base.internal.dispatch.InvocationFilterChain.doFilter(InvocationFilterChain.java:47)
+	at org.apache.felix.http.base.internal.dispatch.HttpFilterChain.doFilter(HttpFilterChain.java:33)
+	at org.apache.sling.security.impl.ReferrerFilter.doFilter(ReferrerFilter.java:259)
+	at org.apache.felix.http.base.internal.handler.FilterHandler.doHandle(FilterHandler.java:88)
+	at org.apache.felix.http.base.internal.handler.FilterHandler.handle(FilterHandler.java:76)
+	at org.apache.felix.http.base.internal.dispatch.InvocationFilterChain.doFilter(InvocationFilterChain.java:47)
+	at org.apache.felix.http.base.internal.dispatch.HttpFilterChain.doFilter(HttpFilterChain.java:33)
+	at com.adobe.granite.license.impl.LicenseCheckFilter.doFilter(LicenseCheckFilter.java:179)
+	at org.apache.felix.http.base.internal.handler.FilterHandler.doHandle(FilterHandler.java:88)
+	at org.apache.felix.http.base.internal.handler.FilterHandler.handle(FilterHandler.java:76)
+	at org.apache.felix.http.base.internal.dispatch.InvocationFilterChain.doFilter(InvocationFilterChain.java:47)
+	at org.apache.felix.http.base.internal.dispatch.HttpFilterChain.doFilter(HttpFilterChain.java:33)
+	at org.apache.felix.http.sslfilter.internal.SslFilter.doFilter(SslFilter.java:55)
+	at org.apache.felix.http.base.internal.handler.FilterHandler.doHandle(FilterHandler.java:88)
+	at org.apache.felix.http.base.internal.handler.FilterHandler.handle(FilterHandler.java:76)
+	at org.apache.felix.http.base.internal.dispatch.InvocationFilterChain.doFilter(InvocationFilterChain.java:47)
+	at org.apache.felix.http.base.internal.dispatch.HttpFilterChain.doFilter(HttpFilterChain.java:33)
+	at org.apache.sling.engine.impl.log.RequestLoggerFilter.doFilter(RequestLoggerFilter.java:75)
+	at org.apache.felix.http.base.internal.handler.FilterHandler.doHandle(FilterHandler.java:88)
+	at org.apache.felix.http.base.internal.handler.FilterHandler.handle(FilterHandler.java:76)
+	at org.apache.felix.http.base.internal.dispatch.InvocationFilterChain.doFilter(InvocationFilterChain.java:47)
+	at org.apache.felix.http.base.internal.dispatch.HttpFilterChain.doFilter(HttpFilterChain.java:33)
+	at org.apache.felix.http.base.internal.dispatch.FilterPipeline.dispatch(FilterPipeline.java:48)
+	at org.apache.felix.http.base.internal.dispatch.Dispatcher.dispatch(Dispatcher.java:39)
+	at org.apache.felix.http.base.internal.DispatcherServlet.service(DispatcherServlet.java:67)
+	at javax.servlet.http.HttpServlet.service(HttpServlet.java:820)
+	at com.day.j2ee.servletengine.ServletRuntimeEnvironment.service(ServletRuntimeEnvironment.java:250)
+	at com.day.j2ee.servletengine.RequestDispatcherImpl.doFilter(RequestDispatcherImpl.java:321)
+	at com.day.j2ee.servletengine.RequestDispatcherImpl.service(RequestDispatcherImpl.java:340)
+	at com.day.j2ee.servletengine.RequestDispatcherImpl.service(RequestDispatcherImpl.java:383)
+	at com.day.j2ee.servletengine.ServletHandlerImpl.process(ServletHandlerImpl.java:360)
+	at com.day.j2ee.servletengine.HttpListener$Worker.run(HttpListener.java:644)
+	at java.lang.Thread.run(Thread.java:722)
+</pre></code><script type="text/javascript">
+window.scrollTo(0, 1000000);
+</script>
+</body></html>

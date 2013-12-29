@@ -55,6 +55,7 @@
         <junit.version>4.10</junit.version>
     </properties>
 
+    <url>http://adamcin.net/granite-client-packman</url>
     <inceptionYear>2013</inceptionYear>
 
     <scm>

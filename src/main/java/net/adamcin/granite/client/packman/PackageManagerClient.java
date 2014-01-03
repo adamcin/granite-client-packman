@@ -31,31 +31,35 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * This is the Public API for a CRX Package Manager Console client. It is intended to be used for implementation of
- * higher level deployment management workflows, and therefore it does not expose any connection details.
+ * This is the Public API for a CRX Package Manager Console client. It is intended to
+ * be used for implementation of higher level deployment management workflows, and
+ * therefore it does not expose any mutable connection details.
  */
 public interface PackageManagerClient {
 
     /**
-     *
-     * @param requestTimeout
+     * Set the amount of time in milliseconds to wait for a response for any given
+     * request. Set to a negative number for no timeout.
+     * @param requestTimeout timeout in milliseconds
      */
     void setRequestTimeout(long requestTimeout);
 
     /**
-     *
-     * @param serviceTimeout the amount of time to wait for service availability
+     * Set the amount of time in milliseconds to wait for service availability,
+     * which may span multiple retry requests. Set to a negative number for no timeout.
+     * @param serviceTimeout timeout in milliseconds
      */
     void setServiceTimeout(long serviceTimeout);
 
+    /**
+     * @return the base URL (not including /crx.*) of the target server
+     */
     String getBaseUrl();
 
-    String getLoginUrl();
-
     /**
-     *
-     * @param packageId
-     * @return
+     * Return the Console UI Url for the specified package, which is useful for creating HTML links.
+     * @param packageId the {@link PackId} representing the package
+     * @return the Console UI Url for the specified package, which is useful for creating HTML links.
      */
     String getConsoleUiUrl(PackId packageId);
 
@@ -68,16 +72,16 @@ public interface PackageManagerClient {
     PackId identify(File file) throws IOException;
 
     /**
-     * Wait for service availability. Use this method between installing a package and any calling any other POST-based
-     * service operation
+     * Wait for service availability. Use this method between installing a package and any calling
+     * any other POST-based service operation
      * @throws Exception on timeout, interruption, or IOException
      */
     void waitForService() throws Exception;
 
     /**
-     * Checks if a package with the specified packageId has already been uploaded to the server. This does not indicate
-     * whether the package has already been installed.
-     * @param packageId
+     * Checks if a package with the specified packageId has already been uploaded to the server.
+     * This does not indicate whether the package has already been installed.
+     * @param packageId the {@link PackId} representing the package
      * @return {@code true} if a package exists, {@code false} otherwise
      * @throws Exception
      */
@@ -85,7 +89,7 @@ public interface PackageManagerClient {
 
     /**
      * List all packages
-     * @return list of packages
+     * @return package list service response
      * @throws Exception
      */
     ListResponse list() throws Exception;
@@ -93,16 +97,18 @@ public interface PackageManagerClient {
     /**
      * List all packages and filter by {@code query}
      * @param query can be null or empty string
-     * @return list of packages filtered by {@code query}
+     * @return package list service response filtered by {@code query}
      * @throws Exception
      */
     ListResponse list(String query) throws Exception;
 
     /**
-     * List one package matching {@code packageId} or many packages matching the {@code packageId} up to the first hyphen.
-     * @param packageId
-     * @param includeVersions
-     * @return
+     * List one package matching {@code packageId} or many packages matching the package group and name
+     * up to the first hyphen.
+     * @param packageId the {@link PackId} representing the group:name(:version)? to match
+     * @param includeVersions set to true to match on group:name up to the first hyphen in the "name-version"
+     *                        string, which effectively matches against all versions of the package
+     * @return package list service response
      * @throws Exception
      */
     ListResponse list(PackId packageId, boolean includeVersions) throws Exception;
@@ -110,10 +116,10 @@ public interface PackageManagerClient {
     /**
      * Upload a package to the server. Does not install the package once uploaded.
      * @param file the package file to be uploaded
-     * @param force set to {@code true} for the uploaded file to replace an existing package on the server that has the
-     *              same id. If {@code false}
-     * @param packageId optional {@link PackId} providing the installation path. If {@code null}, the {@code file} will
-     *                  be identified and that {@link PackId} will be used
+     * @param force set to {@code true} for the uploaded file to replace an existing package on the
+     *              server that has the same id. Has no effect if no existing package is found.
+     * @param packageId optional {@link PackId} providing the installation path. If {@code null},
+     *                  the {@code file} will be identified and that {@link PackId} will be used.
      * @return standard simple service response
      * @throws Exception
      */
@@ -121,18 +127,19 @@ public interface PackageManagerClient {
 
     /**
      * Downloads the package identified by {@code packageId} to the absolute path specified by {@code toFile}
-     * @param packageId
-     * @param toFile
-     * @return
+     * @param packageId {@link PackId} representing package to be downloaded
+     * @param toFile the file to save the downloaded binary data to.
+     * @return a download service response
      * @throws Exception
      */
     DownloadResponse download(PackId packageId, File toFile) throws Exception;
 
     /**
      * Downloads the package to a qualified relative path under {@code toDirectory}
-     * @param packageId
-     * @param toDirectory
-     * @return
+     * @param packageId {@link PackId} representing package to be downloaded
+     * @param toDirectory a base directory under which packages will be saved at a relative path matching
+     *                    their CRX installation path, starting with "./etc/packages"
+     * @return a download service response
      * @throws Exception
      */
     DownloadResponse downloadToDirectory(PackId packageId, File toDirectory) throws Exception;
@@ -153,8 +160,21 @@ public interface PackageManagerClient {
      */
     SimpleResponse replicate(PackId packageId) throws Exception;
 
+    /**
+     * Prints the contents of the package to the response
+     * @param packageId {@link PackId} representing package
+     * @return detailed service response
+     * @throws Exception
+     */
     DetailedResponse contents(PackId packageId) throws Exception;
 
+    /**
+     * Prints the contents of the package to the response
+     * @param packageId {@link PackId} representing package
+     * @param listener response progress listener
+     * @return detailed service response
+     * @throws Exception
+     */
     DetailedResponse contents(PackId packageId, ResponseProgressListener listener) throws Exception;
 
     /**
@@ -183,31 +203,70 @@ public interface PackageManagerClient {
 
     /**
      * Performs a dryRun of an installation of the specified package
-     * @param packageId
-     * @return
+     * @param packageId {@link PackId} representing package
+     * @return detailed service response
      * @throws Exception
      */
     DetailedResponse dryRun(PackId packageId) throws Exception;
 
     /**
      * Performs a dryRun of an installation of the specified package
-     * @param packageId
-     * @param listener
-     * @return
+     * @param packageId {@link PackId} representing package
+     * @param listener response progress listener
+     * @return detailed service response
      * @throws Exception
      */
     DetailedResponse dryRun(PackId packageId, ResponseProgressListener listener) throws Exception;
 
+    /**
+     * Builds the specified package
+     * @param packageId {@link PackId} representing package
+     * @return detailed service response
+     * @throws Exception
+     */
     DetailedResponse build(PackId packageId) throws Exception;
 
+    /**
+     * Builds the specified package
+     * @param packageId {@link PackId} representing package
+     * @param listener response progress listener
+     * @return detailed service response
+     * @throws Exception
+     */
     DetailedResponse build(PackId packageId, ResponseProgressListener listener) throws Exception;
 
+    /**
+     * Rewraps the specified package
+     * @param packageId {@link PackId} representing package
+     * @return detailed service response
+     * @throws Exception
+     */
     DetailedResponse rewrap(PackId packageId) throws Exception;
 
+    /**
+     * Rewraps the specified package
+     * @param packageId {@link PackId} representing package
+     * @param listener response progress listener
+     * @return detailed service response
+     * @throws Exception
+     */
     DetailedResponse rewrap(PackId packageId, ResponseProgressListener listener) throws Exception;
 
+    /**
+     * Uninstalls the specified package
+     * @param packageId {@link PackId} representing package
+     * @return detailed service response
+     * @throws Exception
+     */
     DetailedResponse uninstall(PackId packageId) throws Exception;
 
+    /**
+     * Uninstalls the specified package
+     * @param packageId {@link PackId} representing package
+     * @param listener response progress listener
+     * @return detailed service response
+     * @throws Exception
+     */
     DetailedResponse uninstall(PackId packageId, ResponseProgressListener listener) throws Exception;
 
 }

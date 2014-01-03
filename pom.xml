@@ -37,7 +37,7 @@
 
     <groupId>net.adamcin.granite</groupId>
     <artifactId>granite-client-packman</artifactId>
-    <version>0.6.3-SNAPSHOT</version>
+    <version>0.6.4</version>
     <packaging>jar</packaging>
 
     <name>Granite Client - Package Manager</name>

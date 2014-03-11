@@ -28,6 +28,7 @@
 package net.adamcin.granite.client.packman;
 
 import net.adamcin.commons.testing.junit.TestBody;
+
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -81,37 +82,6 @@ public abstract class AbstractPackageManagerClientITBase {
     public void testLoginSigner() {
         TestBody.test(new PackmgrClientTestBody() {
             @Override protected void execute() throws Exception {
-            }
-        });
-    }
-
-    @Test
-    public void testIdentifyPackage() {
-        TestBody.test(new PackmgrClientTestBody() {
-            @Override protected void execute() throws Exception {
-                client.login("admin", "admin");
-                File nonExist = new File("target/non-exist-package.zip");
-                boolean ioExceptionThrown = false;
-
-                try {
-                    client.identify(nonExist);
-                } catch (IOException e) {
-                    ioExceptionThrown = true;
-                }
-
-                assertTrue("identify throws correct exception for non-existent file", ioExceptionThrown);
-
-                File identifiable = new File("target/identifiable-package.zip");
-                generateTestPackage(identifiable);
-
-                PackId id = client.identify(identifiable);
-
-                assertNotNull("id should not be null", id);
-
-                assertEquals("group should be test-packmgr", "test-packmgr", id.getGroup());
-                assertEquals("name should be test-packmgr-client", "test-packmgr-client", id.getName());
-                assertEquals("version should be 1.0", "1.0", id.getVersion());
-                assertEquals("installationPath should be /etc/packages/test-packmgr/test-packmgr-client-1.0", "/etc/packages/test-packmgr/test-packmgr-client-1.0", id.getInstallationPath());
             }
         });
     }

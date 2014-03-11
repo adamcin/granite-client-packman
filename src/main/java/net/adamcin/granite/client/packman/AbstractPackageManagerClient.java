@@ -41,6 +41,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -137,6 +139,30 @@ public abstract class AbstractPackageManagerClient implements PackageManagerClie
     public final String getBaseUrl() {
         return this.baseUrl;
     }
+    
+    protected final String constructUrl(String path, String query, String fragment) {
+    	final String relPath = path != null && path.startsWith("/") ? path.substring(1) : path;
+    	final String relQuery = query != null && query.startsWith("?") ? query.substring(1) : query;
+    	final String relFragment = fragment != null && fragment.startsWith("#") ? fragment.substring(1) : fragment;
+    	try {
+    		URI baseURI = URI.create(getBaseUrl());
+    		URI relURI = new URI(null, null, relPath, relQuery, relFragment);
+    		return baseURI.resolve(relURI).toString();
+    	} catch (URISyntaxException e) {
+    		StringBuilder sb = new StringBuilder(getBaseUrl());
+    		if (relPath != null) {
+    			sb.append("/").append(relPath);
+    		}
+    		if (relQuery != null) {
+    			sb.append("?").append(relQuery);
+    		}
+    		if (relFragment != null) {
+    			sb.append("#").append(relFragment);
+    		}
+    		return sb.toString();
+    	}
+    	
+    }
 
     public long getRequestTimeout() {
         return requestTimeout;
@@ -155,14 +181,15 @@ public abstract class AbstractPackageManagerClient implements PackageManagerClie
     }
 
     protected final String getHtmlUrl() {
-        return getBaseUrl() + HTML_SERVICE_PATH;
+        //return getBaseUrl() + HTML_SERVICE_PATH;
+    	return constructUrl(HTML_SERVICE_PATH, null, null);
     }
 
     protected final String getHtmlUrl(PackId packageId) {
         if (packageId == null) {
             throw new NullPointerException("packageId");
         }
-        return getHtmlUrl() + packageId.getInstallationPath() + ".zip";
+        return constructUrl(HTML_SERVICE_PATH + packageId.getInstallationPath() + ".zip", null, null);
     }
 
     public String getLoginUrl() {
@@ -170,34 +197,39 @@ public abstract class AbstractPackageManagerClient implements PackageManagerClie
     }
 
     protected final String getJsonUrl() {
-        return getBaseUrl() + JSON_SERVICE_PATH;
+        //return getBaseUrl() + JSON_SERVICE_PATH;
+    	return constructUrl(JSON_SERVICE_PATH, null, null);
     }
 
     protected final String getJsonUrl(PackId packageId) {
         if (packageId == null) {
             throw new NullPointerException("packageId");
         }
-        return getJsonUrl() + packageId.getInstallationPath() + ".zip";
+        //return getJsonUrl() + packageId.getInstallationPath() + ".zip";
+        return constructUrl(JSON_SERVICE_PATH + packageId.getInstallationPath() + ".zip", null, null);
     }
 
     protected final String getListUrl() {
-        return getBaseUrl() + CONSOLE_UI_LIST_PATH;
+        //return getBaseUrl() + CONSOLE_UI_LIST_PATH;
+    	return constructUrl(CONSOLE_UI_LIST_PATH, null, null);
     }
 
     protected final String getDownloadUrl() {
-        return getBaseUrl() + CONSOLE_UI_DOWNLOAD_PATH;
+        //return getBaseUrl() + CONSOLE_UI_DOWNLOAD_PATH;
+    	return constructUrl(CONSOLE_UI_DOWNLOAD_PATH, null, null);
     }
 
     public final String getConsoleUiUrl() {
-        return getBaseUrl() + CONSOLE_UI_BASE_PATH;
+        //return getBaseUrl() + CONSOLE_UI_BASE_PATH;
+    	return constructUrl(CONSOLE_UI_BASE_PATH, null, null);
     }
 
     public final String getConsoleUiUrl(PackId packageId) {
         if (packageId == null) {
             throw new NullPointerException("packageId");
         }
-
-        return getConsoleUiUrl() + "#" + packageId.getInstallationPath() + ".zip";
+        //return getConsoleUiUrl() + "#" + packageId.getInstallationPath() + ".zip";
+        return constructUrl(CONSOLE_UI_BASE_PATH, null, packageId.getInstallationPath() + ".zip");
     }
 
     public abstract boolean login(String username, String password) throws IOException;

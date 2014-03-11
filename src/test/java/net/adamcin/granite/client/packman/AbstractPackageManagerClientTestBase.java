@@ -111,7 +111,7 @@ public abstract class AbstractPackageManagerClientTestBase {
 						client.getHtmlUrl() + "/etc/packages/percents%25/and%20spaces-1.0.zip",
 						client.getHtmlUrl(illegalId));
 				
-				// escape question mark (? %3F), ampersand (& %26), and octothorpe (# %23)
+				// escape question mark (? %3F) and octothorpe (# %23), but not ampersand (& %26)
 				PackId reservedId = PackId.createPackId("amps&", "quests?octothorpes#", "1.0");
 				assertEquals("packIds with reserved URL chars should work", 
 						client.getHtmlUrl() + "/etc/packages/amps&/quests%3Foctothorpes%23-1.0.zip",
@@ -143,7 +143,7 @@ public abstract class AbstractPackageManagerClientTestBase {
 						client.getJsonUrl() + "/etc/packages/percents%25/and%20spaces-1.0.zip",
 						client.getJsonUrl(illegalId));
 				
-				// escape question mark (? %3F), ampersand (& %26), and octothorpe (# %23)
+				// escape question mark (? %3F) and octothorpe (# %23), but not ampersand (& %26)
 				PackId reservedId = PackId.createPackId("amps&", "quests?octothorpes#", "1.0");
 				assertEquals("packIds with reserved URL chars should work", 
 						client.getJsonUrl() + "/etc/packages/amps&/quests%3Foctothorpes%23-1.0.zip",
@@ -168,10 +168,10 @@ public abstract class AbstractPackageManagerClientTestBase {
 						client.getConsoleUiUrl() + "#/etc/packages/percents%25/and%20spaces-1.0.zip",
 						client.getConsoleUiUrl(illegalId));
 				
-				// escape question mark (? %3F), ampersand (& %26), and octothorpe (# %23)
+				// escape octothorpe (# %23), but do not escape question mark (? %3F) or ampersand (& %26) 
 				PackId reservedId = PackId.createPackId("amps&", "quests?octothorpes#", "1.0");
 				assertEquals("packIds with reserved URL chars should work", 
-						client.getConsoleUiUrl() + "#/etc/packages/amps&/quests%3Foctothorpes%23-1.0.zip",
+						client.getConsoleUiUrl() + "#/etc/packages/amps&/quests?octothorpes%23-1.0.zip",
 						client.getConsoleUiUrl(reservedId));
 			
 			}

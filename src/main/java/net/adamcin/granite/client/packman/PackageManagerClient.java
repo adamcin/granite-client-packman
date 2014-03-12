@@ -64,12 +64,22 @@ public interface PackageManagerClient {
     String getConsoleUiUrl(PackId packageId);
 
     /**
-     * Identify a CRX package based on its metadata
+     * Identify a CRX package based on its metadata. Will be strict about it so that it won't naively
+     * pick up OSGi bundles if the client isn't careful about which files it is scanning.
      * @param file a {@link File} representing the package
      * @return a {@link PackId} object if the file represents a package, or {@code null} otherwise
      * @throws IOException if the file can not be read, or it is not a zip file
      */
     PackId identify(File file) throws IOException;
+    
+    /**
+     * Identify a CRX package based on its metadata
+     * @param file a {@link File} representing the package
+     * @param strict set to true to require a META-INF/vault/properties.xml file.
+     * @return a {@link PackId} object if the file represents a package, or {@code null} otherwise
+     * @throws IOException if the file can not be read, or it is not a zip file
+     */
+    PackId identify(File file, boolean strict) throws IOException;
 
     /**
      * Wait for service availability. Use this method between installing a package and any calling

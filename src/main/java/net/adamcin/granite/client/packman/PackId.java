@@ -137,8 +137,27 @@ public final class PackId implements Serializable, Comparable<PackId> {
             return this.getGroup().compareTo(o.getGroup());
         }
     }
-
+    
+    /**
+     * Attempt to identify a file as a valid CRX content package. Will be strict about it 
+     * so that it won't naively pick up OSGi bundles if the client isn't careful about 
+     * which files it is scanning.
+     * @param file the alleged content package file to identify
+     * @return a PackId instance if identification was successful, or null if file is readable, but not a package.
+     * @throws IOException
+     */
     public static PackId identifyPackage(File file) throws IOException {
+    	return identifyPackage(file, true);
+    }
+
+    /**
+     * Attempt to identify a file as a valid CRX content package.
+     * @param file the alleged content package file to identify
+     * @param strict set to true to require a META-INF/vault/properties.xml file.
+     * @return a PackId instance if identification was successful, or null if file is readable, but not a package.
+     * @throws IOException
+     */
+    public static PackId identifyPackage(File file, boolean strict) throws IOException {
         if (file == null) {
             throw new NullPointerException("file");
         }
@@ -162,7 +181,7 @@ public final class PackId implements Serializable, Comparable<PackId> {
             }
         }
 
-        if (id == null) {
+        if (id == null && !strict) {
             PackageId _id = new PackageId(PackageId.ETC_PACKAGES_PREFIX + file.getName());
             return new PackId(_id.getGroup(), _id.getName(), _id.getVersionString(), _id.getInstallationPath());
         } else {

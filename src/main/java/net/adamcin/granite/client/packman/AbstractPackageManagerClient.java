@@ -719,6 +719,13 @@ public abstract class AbstractPackageManagerClient implements PackageManagerClie
     public PackId identify(File file) throws IOException {
         return PackId.identifyPackage(file);
     }
+    
+    /**
+     * {@inheritDoc}
+     */
+    public PackId identify(File file, boolean strict) throws IOException {
+        return PackId.identifyPackage(file, strict);
+    }
 
     /**
      * {@inheritDoc}

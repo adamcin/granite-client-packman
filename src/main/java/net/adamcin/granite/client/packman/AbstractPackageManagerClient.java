@@ -129,15 +129,15 @@ public abstract class AbstractPackageManagerClient implements PackageManagerClie
             throw new NullPointerException("baseUrl");
         }
 
-        String _baseUrl = baseUrl;
-        while (_baseUrl.endsWith("/")) {
-            _baseUrl = _baseUrl.substring(0, _baseUrl.length() - 1);
-        }
-        this.baseUrl = _baseUrl;
+        this.baseUrl = baseUrl;
     }
 
     public final String getBaseUrl() {
-        return this.baseUrl;
+    	String _baseUrl = this.baseUrl;
+        if (_baseUrl != null && !_baseUrl.endsWith("/")) {
+        	_baseUrl = _baseUrl.concat("/");
+        }
+        return _baseUrl;
     }
     
     protected final String constructUrl(String path, String query, String fragment) {

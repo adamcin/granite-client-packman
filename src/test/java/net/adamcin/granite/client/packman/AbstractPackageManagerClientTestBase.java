@@ -177,6 +177,76 @@ public abstract class AbstractPackageManagerClientTestBase {
 			}
     	});
     }
+    
+    @Test
+    public void testGetListUrl() {
+    	TestBody.test(new PackmgrClientTestBody() {
+			@Override protected void execute() throws Exception {
+				String noSlash = "http://localhost:4502";
+				assertEquals("don't screw up the URL handling, you klutz. [default]", 
+						noSlash + AbstractPackageManagerClient.CONSOLE_UI_LIST_PATH,
+						client.getListUrl());
+			
+				client.setBaseUrl(noSlash);
+				assertEquals("don't screw up the URL handling, you klutz. [noSlash]", 
+						noSlash + AbstractPackageManagerClient.CONSOLE_UI_LIST_PATH,
+						client.getListUrl());
+			
+				String slash = noSlash + "/";
+				client.setBaseUrl(slash);
+				assertEquals("don't screw up the URL handling, you klutz. [slash]", 
+						noSlash + AbstractPackageManagerClient.CONSOLE_UI_LIST_PATH,
+						client.getListUrl());
+				
+				String withContextNoSlash = noSlash + "/context";
+				client.setBaseUrl(withContextNoSlash);
+				assertEquals("don't screw up the URL handling, you klutz. [withContextNoSlash]", 
+						withContextNoSlash + AbstractPackageManagerClient.CONSOLE_UI_LIST_PATH,
+						client.getListUrl());
+				
+				String withContextSlash = withContextNoSlash + "/";
+				client.setBaseUrl(withContextSlash);
+				assertEquals("don't screw up the URL handling, you klutz. [withContextSlash]", 
+						withContextNoSlash + AbstractPackageManagerClient.CONSOLE_UI_LIST_PATH,
+						client.getListUrl());
+			}
+    	});
+    }
+    
+    @Test
+    public void testGetDownloadUrl() {
+    	TestBody.test(new PackmgrClientTestBody() {
+			@Override protected void execute() throws Exception {
+				String noSlash = "http://localhost:4502";
+				assertEquals("don't screw up the URL handling, you klutz. [default]", 
+						noSlash + AbstractPackageManagerClient.CONSOLE_UI_DOWNLOAD_PATH,
+						client.getDownloadUrl());
+			
+				client.setBaseUrl(noSlash);
+				assertEquals("don't screw up the URL handling, you klutz. [noSlash]", 
+						noSlash + AbstractPackageManagerClient.CONSOLE_UI_DOWNLOAD_PATH,
+						client.getDownloadUrl());
+			
+				String slash = noSlash + "/";
+				client.setBaseUrl(slash);
+				assertEquals("don't screw up the URL handling, you klutz. [slash]", 
+						noSlash + AbstractPackageManagerClient.CONSOLE_UI_DOWNLOAD_PATH,
+						client.getDownloadUrl());
+				
+				String withContextNoSlash = noSlash + "/context";
+				client.setBaseUrl(withContextNoSlash);
+				assertEquals("don't screw up the URL handling, you klutz. [withContextNoSlash]", 
+						withContextNoSlash + AbstractPackageManagerClient.CONSOLE_UI_DOWNLOAD_PATH,
+						client.getDownloadUrl());
+				
+				String withContextSlash = withContextNoSlash + "/";
+				client.setBaseUrl(withContextSlash);
+				assertEquals("don't screw up the URL handling, you klutz. [withContextSlash]", 
+						withContextNoSlash + AbstractPackageManagerClient.CONSOLE_UI_DOWNLOAD_PATH,
+						client.getDownloadUrl());
+			}
+    	});
+    }
 
     abstract class PackmgrClientTestBody extends TestBody {
         AbstractPackageManagerClient client = getClientImplementation();

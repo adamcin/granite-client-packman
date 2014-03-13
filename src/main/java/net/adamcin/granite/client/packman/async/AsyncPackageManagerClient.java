@@ -302,6 +302,7 @@ public final class AsyncPackageManagerClient extends AbstractPackageManagerClien
     }
 
     private AsyncHttpClient.BoundRequestBuilder buildListRequest() {
+    	System.out.println("****** LIST URL: " + getListUrl());
         return this.addContext(this.client.prepareGet(getListUrl()));
     }
 

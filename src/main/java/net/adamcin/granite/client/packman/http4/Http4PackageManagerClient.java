@@ -58,6 +58,7 @@ import org.apache.http.protocol.HttpContext;
 import java.io.File;
 import java.io.IOException;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -259,7 +260,7 @@ public final class Http4PackageManagerClient extends AbstractPackageManagerClien
 
     @Override
     protected ResponseBuilder getResponseBuilder() {
-        return new Http4ResponseBuilder();
+        return new Http4ResponseBuilder().withParam(KEY_CHARSET, getCharset().name());
     }
 
     class Http4ResponseBuilder extends ResponseBuilder {
@@ -303,7 +304,26 @@ public final class Http4PackageManagerClient extends AbstractPackageManagerClien
             MultipartEntity entity = new MultipartEntity();
 
             for (BasicNameValuePair param : this.stringParams.values()) {
-                entity.addPart(param.getName(), new StringBody(param.getValue()));
+                entity.addPart(param.getName(), new StringBody(param.getValue(), getCharset()));
+            }
+
+            for (Map.Entry<String, FileBody> param : this.fileParams.entrySet()) {
+                entity.addPart(param.getKey(), param.getValue());
+            }
+
+            request.setEntity(entity);
+
+            return executeSimpleRequest(request);
+        }
+
+        @Override
+        public SimpleResponse getUpdateResponse() throws Exception {
+            HttpPost request = new HttpPost(getUpdateUrl());
+
+            MultipartEntity entity = new MultipartEntity();
+
+            for (BasicNameValuePair param : this.stringParams.values()) {
+                entity.addPart(param.getName(), new StringBody(param.getValue(), getCharset()));
             }
 
             for (Map.Entry<String, FileBody> param : this.fileParams.entrySet()) {
@@ -322,7 +342,7 @@ public final class Http4PackageManagerClient extends AbstractPackageManagerClien
             MultipartEntity entity = new MultipartEntity();
 
             for (BasicNameValuePair param : this.stringParams.values()) {
-                entity.addPart(param.getName(), new StringBody(param.getValue()));
+                entity.addPart(param.getName(), new StringBody(param.getValue(), getCharset()));
             }
 
             for (Map.Entry<String, FileBody> param : this.fileParams.entrySet()) {
@@ -341,13 +361,13 @@ public final class Http4PackageManagerClient extends AbstractPackageManagerClien
             qs.append("?");
             if (packId != null) {
                 qs.append(KEY_PATH).append("=").append(
-                        URLEncoder.encode(packId.getInstallationPath() + ".zip", "utf-8")
+                        URLEncoder.encode(packId.getInstallationPath() + ".zip", getCharset().name())
                 );
                 qs.append("&");
             }
             for (NameValuePair pair : this.stringParams.values()) {
-                qs.append(URLEncoder.encode(pair.getName(), "utf-8")).append("=")
-                        .append(URLEncoder.encode(pair.getValue(), "utf-8")).append("&");
+                qs.append(URLEncoder.encode(pair.getName(), getCharset().name())).append("=")
+                        .append(URLEncoder.encode(pair.getValue(), getCharset().name())).append("&");
             }
 
             HttpGet request = new HttpGet(getListUrl() + qs.substring(0, qs.length() - 1));
@@ -362,13 +382,13 @@ public final class Http4PackageManagerClient extends AbstractPackageManagerClien
             qs.append("?");
             if (packId != null) {
                 qs.append(KEY_PATH).append("=").append(
-                        URLEncoder.encode(packId.getInstallationPath() + ".zip", "utf-8")
+                        URLEncoder.encode(packId.getInstallationPath() + ".zip", getCharset().name())
                 );
                 qs.append("&");
             }
             for (NameValuePair pair : this.stringParams.values()) {
-                qs.append(URLEncoder.encode(pair.getName(), "utf-8")).append("=")
-                        .append(URLEncoder.encode(pair.getValue(), "utf-8")).append("&");
+                qs.append(URLEncoder.encode(pair.getName(), getCharset().name())).append("=")
+                        .append(URLEncoder.encode(pair.getValue(), getCharset().name())).append("&");
             }
 
             HttpGet request = new HttpGet(getDownloadUrl() + qs.substring(0, qs.length() - 1));

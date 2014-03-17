@@ -35,6 +35,7 @@ import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.Realm;
 import com.ning.http.client.Request;
 import com.ning.http.client.Response;
+import com.ning.http.client.StringPart;
 import net.adamcin.granite.client.packman.AbstractPackageManagerClient;
 import net.adamcin.granite.client.packman.DetailedResponse;
 import net.adamcin.granite.client.packman.DownloadResponse;
@@ -46,6 +47,7 @@ import net.adamcin.granite.client.packman.UnauthorizedException;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -309,6 +311,10 @@ public final class AsyncPackageManagerClient extends AbstractPackageManagerClien
         return this.addContext(this.client.prepareGet(getDownloadUrl()));
     }
 
+    private AsyncHttpClient.BoundRequestBuilder buildUpdateRequest() {
+        return this.addContext(this.client.preparePost(getUpdateUrl()));
+    }
+
     private static String getResponseEncoding(Response response) {
         String encoding = response.getHeader("Content-Encoding");
 
@@ -345,7 +351,7 @@ public final class AsyncPackageManagerClient extends AbstractPackageManagerClien
 
     @Override
     protected ResponseBuilder getResponseBuilder() {
-        return new AsyncResponseBuilder();
+        return new AsyncResponseBuilder().withParam(KEY_CHARSET, getCharset().name());
     }
 
     class AsyncResponseBuilder extends ResponseBuilder {
@@ -391,6 +397,22 @@ public final class AsyncPackageManagerClient extends AbstractPackageManagerClien
                 } else {
                     requestBuilder.addQueryParameter(param.getKey(), param.getValue());
                 }
+            }
+
+            for (Map.Entry<String, FilePart> param : this.fileParams.entrySet()) {
+                requestBuilder.addBodyPart(param.getValue());
+            }
+
+            return executeSimpleRequest(requestBuilder.build());
+        }
+
+        @Override
+        public SimpleResponse getUpdateResponse() throws Exception {
+            AsyncHttpClient.BoundRequestBuilder requestBuilder = buildUpdateRequest();
+            for (Map.Entry<String, String> param : this.stringParams.entrySet()) {
+                requestBuilder.addBodyPart(
+                        new StringPart(param.getKey(), param.getValue(), getCharset().name()));
+
             }
 
             for (Map.Entry<String, FilePart> param : this.fileParams.entrySet()) {

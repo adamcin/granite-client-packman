@@ -27,6 +27,8 @@
 
 package net.adamcin.granite.client.packman;
 
+import org.apache.jackrabbit.vault.fs.api.WorkspaceFilter;
+
 import java.io.File;
 import java.io.IOException;
 
@@ -80,6 +82,22 @@ public interface PackageManagerClient {
      * @throws IOException if the file can not be read, or it is not a zip file
      */
     PackId identify(File file, boolean strict) throws IOException;
+
+    /**
+     * Validates a package file against a workspace filter. Validation consists of the following:
+     *   1. Strict identify
+     *   2. Call {@link org.apache.jackrabbit.vault.packaging.PackageManager#open(java.io.File, boolean)}
+     *   3. Call {@link org.apache.jackrabbit.vault.packaging.VaultPackage#isValid()}
+     *   4. Check package {@link org.apache.jackrabbit.vault.fs.api.WorkspaceFilter}
+     *      against validation {@link org.apache.jackrabbit.vault.fs.api.WorkspaceFilter}
+     *
+     * @param file the package file to be validated
+     * @param options the validation options
+     * @param listener reports details of the validation process.
+     * @return true if the package is completely valid, false otherwise.
+     * @throws IOException if the file can not be read, or it is not a zip file
+     */
+    boolean validate(File file, ValidationOptions options, ResponseProgressListener listener) throws IOException;
 
     /**
      * Wait for service availability. Use this method between installing a package and any calling
@@ -227,6 +245,31 @@ public interface PackageManagerClient {
      * @throws Exception
      */
     DetailedResponse dryRun(PackId packageId, ResponseProgressListener listener) throws Exception;
+
+    /**
+     * Create a package with the specified packageId
+     * @param packageId {@link PackId} representing new package
+     * @return simple service response
+     * @throws Exception
+     */
+    SimpleResponse create(PackId packageId) throws Exception;
+
+    /**
+     * Update a package definition with the specified {@link org.apache.jackrabbit.vault.fs.api.WorkspaceFilter}
+     * @param packageId {@link PackId} representing package to update
+     * @return simple service response
+     * @throws Exception
+     */
+    SimpleResponse updateFilter(PackId packageId, WorkspaceFilter filter) throws Exception;
+
+    /**
+     * Move/Rename a package on the server
+     * @param packageId {@link PackId} representing package to move/rename
+     * @param moveToId {@link PackId} package ID to move to
+     * @return simple service response
+     * @throws Exception
+     */
+    SimpleResponse move(PackId packageId, PackId moveToId) throws Exception;
 
     /**
      * Builds the specified package

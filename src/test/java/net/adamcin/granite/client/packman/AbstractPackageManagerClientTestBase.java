@@ -44,6 +44,7 @@ import static org.junit.Assert.*;
 
 public abstract class AbstractPackageManagerClientTestBase {
     public final Logger LOGGER = LoggerFactory.getLogger(getClass());
+    public final ResponseProgressListener LISTENER = new LoggingListener(LOGGER, LoggingListener.Level.DEBUG);
 
     protected abstract AbstractPackageManagerClient getClientImplementation();
 

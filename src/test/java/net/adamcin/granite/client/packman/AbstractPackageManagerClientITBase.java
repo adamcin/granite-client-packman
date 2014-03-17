@@ -27,9 +27,16 @@
 
 package net.adamcin.granite.client.packman;
 
+import net.adamcin.commons.testing.junit.FailUtil;
 import net.adamcin.commons.testing.junit.TestBody;
-
 import org.apache.commons.io.IOUtils;
+import org.apache.jackrabbit.vault.fs.api.PathFilterSet;
+import org.apache.jackrabbit.vault.fs.api.WorkspaceFilter;
+import org.apache.jackrabbit.vault.fs.config.DefaultWorkspaceFilter;
+import org.apache.jackrabbit.vault.fs.filter.DefaultPathFilter;
+import org.apache.jackrabbit.vault.packaging.PackageManager;
+import org.apache.jackrabbit.vault.packaging.PackagingService;
+import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,11 +46,15 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public abstract class AbstractPackageManagerClientITBase {
     public final Logger LOGGER = LoggerFactory.getLogger(getClass());
+    public final ResponseProgressListener LISTENER = new LoggingListener(LOGGER, LoggingListener.Level.DEBUG);
 
     protected abstract AbstractPackageManagerClient getClientImplementation();
 
@@ -138,6 +149,138 @@ public abstract class AbstractPackageManagerClientITBase {
                 LOGGER.info("uploading: {}", client.upload(file, true, id));
 
                 assertTrue("package should exist on server", client.existsOnServer(id));
+
+                LOGGER.info("deleting: {}", client.delete(id));
+
+                assertFalse("package should not exist on server", client.existsOnServer(id));
+            }
+        });
+    }
+
+    @Test
+    public void testCreate() {
+        TestBody.test(new PackmgrClientTestBody() {
+            @Override protected void execute() throws Exception {
+                client.login("admin", "admin");
+
+                PackId id = PackId.createPackId("test-packmgr", "test-create-package", "1.0");
+                if (client.existsOnServer(id)) {
+                    LOGGER.info("deleting: {}", client.delete(id));
+                }
+
+                assertFalse("package should not exist on server", client.existsOnServer(id));
+
+                LOGGER.info("creating: {}", client.create(id));
+
+                assertTrue("package should exist on server", client.existsOnServer(id));
+
+                LOGGER.info("deleting: {}", client.delete(id));
+
+                assertFalse("package should not exist on server", client.existsOnServer(id));
+            }
+        });
+    }
+
+    @Test
+    public void testMove() {
+        TestBody.test(new PackmgrClientTestBody() {
+            @Override protected void execute() throws Exception {
+                client.login("admin", "admin");
+
+                PackId id = PackId.createPackId("test-packmgr", "test-move", "1.0");
+                PackId moveToId = PackId.createPackId("test-packmgr", "move-to", "1.0");
+                if (client.existsOnServer(id)) {
+                    LOGGER.info("deleting: {}", client.delete(id));
+                }
+                if (client.existsOnServer(moveToId)) {
+                    LOGGER.info("deleting: {}", client.delete(moveToId));
+                }
+
+                assertFalse("package should not exist on server", client.existsOnServer(id));
+                assertFalse("move-to-location should not exist on server", client.existsOnServer(moveToId));
+
+                LOGGER.info("creating: {}", client.create(id));
+
+                assertTrue("package should exist on server", client.existsOnServer(id));
+                assertFalse("move-to-location should not exist on server", client.existsOnServer(moveToId));
+
+                LOGGER.info("moving: {}", client.move(id, moveToId));
+
+                assertFalse("package should not exist on server", client.existsOnServer(id));
+                assertTrue("move-to-location SHOULD exist on server", client.existsOnServer(moveToId));
+
+                LOGGER.info("deleting: {}", client.delete(moveToId));
+            }
+        });
+    }
+
+    @Test
+    public void testUpdateFilter() {
+        TestBody.test(new PackmgrClientTestBody() {
+            @Override protected void execute() throws Exception {
+                client.login("admin", "admin");
+
+                PackId id = PackId.createPackId("test-packmgr", "test-update-filter", "1.0");
+                if (client.existsOnServer(id)) {
+                    LOGGER.info("deleting: {}", client.delete(id));
+                }
+
+                assertFalse("package should not exist on server", client.existsOnServer(id));
+
+                LOGGER.info("creating: {}", client.create(id));
+
+                assertTrue("package should exist on server", client.existsOnServer(id));
+
+                WorkspaceFilter origWSPFilter = new DefaultWorkspaceFilter();
+                String theOneRoot = "/tmp/test-update-filter";
+                String theOnePattern = theOneRoot + "(/.*)?";
+                PathFilterSet origFilterSet = new PathFilterSet(theOneRoot);
+                origFilterSet.addInclude(new DefaultPathFilter(theOnePattern));
+                origWSPFilter.getFilterSets().add(origFilterSet);
+
+
+                LOGGER.info("updating filter: {}", client.updateFilter(id, origWSPFilter));
+
+                LOGGER.info("building: {}", client.build(id, LISTENER));
+
+                File downloaded = new File("target/test-update-filter-1.0.zip");
+
+                LOGGER.info("downloading: {}", client.download(id, downloaded));
+
+                VaultPackage pack = null;
+                try {
+                    PackageManager manager = PackagingService.getPackageManager();
+                    pack = manager.open(downloaded, true);
+
+                    assertTrue("package should be valid after download", pack.isValid());
+
+                    WorkspaceFilter wspFilter = pack.getMetaInf().getFilter();
+
+                    List<PathFilterSet> filterSets = wspFilter.getFilterSets();
+
+                    assertFalse("package filter sets should not be empty", filterSets.isEmpty());
+
+                    PathFilterSet filterSet = filterSets.get(0);
+
+                    assertEquals("filterSet root should be the same as before.", theOneRoot, filterSet.getRoot());
+
+                    assertFalse("package filter set rules should not be empty", filterSet.getEntries().isEmpty());
+
+                    assertTrue("package filter rule should be an include",
+                            filterSet.getEntries().get(0).isInclude());
+
+                    DefaultPathFilter pathFilter = (DefaultPathFilter) filterSet.getEntries().get(0).getFilter();
+
+                    assertEquals("filter pattern should be the same as before.",
+                            theOnePattern, pathFilter.getPattern());
+
+                } catch (IOException e) {
+                    FailUtil.sprintFail(e);
+                } finally {
+                    if (pack != null) {
+                        pack.close();
+                    }
+                }
 
                 LOGGER.info("deleting: {}", client.delete(id));
 

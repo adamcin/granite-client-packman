@@ -51,6 +51,7 @@ import org.apache.commons.httpclient.methods.multipart.StringPart;
 import java.io.File;
 import java.io.IOException;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -172,7 +173,7 @@ public final class Http3PackageManagerClient extends AbstractPackageManagerClien
 
     @Override
     protected ResponseBuilder getResponseBuilder() {
-        return new Http3ResponseBuilder();
+        return new Http3ResponseBuilder().withParam(KEY_CHARSET, getCharset().name());
     }
 
     class Http3ResponseBuilder extends ResponseBuilder {
@@ -216,7 +217,31 @@ public final class Http3PackageManagerClient extends AbstractPackageManagerClien
             List<Part> parts = new ArrayList<Part>();
 
             for (NameValuePair part : this.stringParams.values()) {
-                parts.add(new StringPart(part.getName(), part.getValue()));
+                parts.add(new StringPart(part.getName(), part.getValue(), getCharset().name()));
+            }
+
+            for (Part part : this.fileParams.values()) {
+                parts.add(part);
+            }
+
+            request.setRequestEntity(new MultipartRequestEntity(parts.toArray(new Part[parts.size()]),
+                    request.getParams()));
+
+            try {
+                return executeSimpleRequest(request);
+            } finally {
+                request.releaseConnection();
+            }
+        }
+
+        @Override
+        public SimpleResponse getUpdateResponse() throws Exception {
+            PostMethod request = new PostMethod(getUpdateUrl());
+
+            List<Part> parts = new ArrayList<Part>();
+
+            for (NameValuePair part : this.stringParams.values()) {
+                parts.add(new StringPart(part.getName(), part.getValue(), getCharset().name()));
             }
 
             for (Part part : this.fileParams.values()) {
@@ -240,7 +265,7 @@ public final class Http3PackageManagerClient extends AbstractPackageManagerClien
             List<Part> parts = new ArrayList<Part>();
 
             for (NameValuePair part : this.stringParams.values()) {
-                parts.add(new StringPart(part.getName(), part.getValue()));
+                parts.add(new StringPart(part.getName(), part.getValue(), getCharset().name()));
             }
 
             for (Part part : this.fileParams.values()) {
@@ -266,13 +291,13 @@ public final class Http3PackageManagerClient extends AbstractPackageManagerClien
             qs.append("?");
             if (packId != null) {
                 qs.append(KEY_PATH).append("=").append(
-                        URLEncoder.encode(packId.getInstallationPath() + ".zip", "utf-8")
+                        URLEncoder.encode(packId.getInstallationPath() + ".zip", getCharset().name())
                 );
                 qs.append("&");
             }
             for (NameValuePair pair : this.stringParams.values()) {
-                qs.append(URLEncoder.encode(pair.getName(), "utf-8")).append("=")
-                        .append(URLEncoder.encode(pair.getValue(), "utf-8")).append("&");
+                qs.append(URLEncoder.encode(pair.getName(), getCharset().name())).append("=")
+                        .append(URLEncoder.encode(pair.getValue(), getCharset().name())).append("&");
             }
 
             GetMethod request = new GetMethod(getListUrl() + qs.substring(0, qs.length() - 1));
@@ -291,13 +316,13 @@ public final class Http3PackageManagerClient extends AbstractPackageManagerClien
             qs.append("?");
             if (packId != null) {
                 qs.append(KEY_PATH).append("=").append(
-                        URLEncoder.encode(packId.getInstallationPath() + ".zip", "utf-8")
+                        URLEncoder.encode(packId.getInstallationPath() + ".zip", getCharset().name())
                 );
                 qs.append("&");
             }
             for (NameValuePair pair : this.stringParams.values()) {
-                qs.append(URLEncoder.encode(pair.getName(), "utf-8")).append("=")
-                        .append(URLEncoder.encode(pair.getValue(), "utf-8")).append("&");
+                qs.append(URLEncoder.encode(pair.getName(), getCharset().name())).append("=")
+                        .append(URLEncoder.encode(pair.getValue(), getCharset().name())).append("&");
             }
 
             GetMethod request = new GetMethod(getDownloadUrl() + qs.substring(0, qs.length() - 1));

@@ -27,6 +27,11 @@
 
 package net.adamcin.granite.client.packman;
 
+import org.apache.jackrabbit.vault.fs.api.FilterSet;
+import org.apache.jackrabbit.vault.fs.api.PathFilter;
+import org.apache.jackrabbit.vault.fs.api.PathFilterSet;
+import org.apache.jackrabbit.vault.fs.api.WorkspaceFilter;
+import org.apache.jackrabbit.vault.fs.filter.DefaultPathFilter;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -43,6 +48,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -59,6 +65,7 @@ public abstract class AbstractPackageManagerClient implements PackageManagerClie
     public static final String CONSOLE_UI_BASE_PATH = "/crx/packmgr/index.jsp";
     public static final String CONSOLE_UI_LIST_PATH = "/crx/packmgr/list.jsp";
     public static final String CONSOLE_UI_DOWNLOAD_PATH = "/crx/packmgr/download.jsp";
+    public static final String CONSOLE_UI_UPDATE_PATH = "/crx/packmgr/update.jsp";
     public static final String SERVICE_BASE_PATH = "/crx/packmgr/service";
     public static final String HTML_SERVICE_PATH = SERVICE_BASE_PATH + "/console.html";
     public static final String JSON_SERVICE_PATH = SERVICE_BASE_PATH + "/exec.json";
@@ -87,11 +94,17 @@ public abstract class AbstractPackageManagerClient implements PackageManagerClie
     public static final String KEY_NEEDS_REWRAP = "needsRewrap";
     public static final String KEY_INCLUDE_VERSIONS = "includeVersions";
     public static final String KEY_QUERY = "q";
+    public static final String KEY_GROUP_NAME = "groupName";
+    public static final String KEY_PACKAGE_NAME = "packageName";
+    public static final String KEY_PACKAGE_VERSION = "packageVersion";
+    public static final String KEY_FILTER = "filter";
+    public static final String KEY_CHARSET = "_charset_";
 
     public static final String CMD_CONTENTS = "contents";
     public static final String CMD_INSTALL = "install";
     public static final String CMD_UNINSTALL = "uninstall";
     public static final String CMD_UPLOAD = "upload";
+    public static final String CMD_CREATE = "create";
     public static final String CMD_BUILD = "build";
     public static final String CMD_REWRAP = "rewrap";
     public static final String CMD_DRY_RUN = "dryrun";
@@ -120,9 +133,21 @@ public abstract class AbstractPackageManagerClient implements PackageManagerClie
     public static final String LEGACY_PARAM_TOKEN = ".token";
     public static final String LEGACY_VALUE_TOKEN = "";
 
+    private Charset charset = Charset.forName("utf-8");
     private String baseUrl = DEFAULT_BASE_URL;
     private long requestTimeout = -1L;
     private long serviceTimeout = -1L;
+
+    public Charset getCharset() {
+        return charset;
+    }
+
+    public void setCharset(Charset charset) {
+        if (charset == null) {
+            throw new NullPointerException("charset");
+        }
+        this.charset = charset;
+    }
 
     public void setBaseUrl(String baseUrl) {
         if (baseUrl == null) {
@@ -205,22 +230,22 @@ public abstract class AbstractPackageManagerClient implements PackageManagerClie
         if (packageId == null) {
             throw new NullPointerException("packageId");
         }
-        //return getJsonUrl() + packageId.getInstallationPath() + ".zip";
         return constructUrl(JSON_SERVICE_PATH + packageId.getInstallationPath() + ".zip", null, null);
     }
 
     protected final String getListUrl() {
-        //return getBaseUrl() + CONSOLE_UI_LIST_PATH;
     	return constructUrl(CONSOLE_UI_LIST_PATH, null, null);
     }
 
     protected final String getDownloadUrl() {
-        //return getBaseUrl() + CONSOLE_UI_DOWNLOAD_PATH;
     	return constructUrl(CONSOLE_UI_DOWNLOAD_PATH, null, null);
     }
 
+    protected final String getUpdateUrl() {
+        return constructUrl(CONSOLE_UI_UPDATE_PATH, null, null);
+    }
+
     public final String getConsoleUiUrl() {
-        //return getBaseUrl() + CONSOLE_UI_BASE_PATH;
     	return constructUrl(CONSOLE_UI_BASE_PATH, null, null);
     }
 
@@ -228,11 +253,38 @@ public abstract class AbstractPackageManagerClient implements PackageManagerClie
         if (packageId == null) {
             throw new NullPointerException("packageId");
         }
-        //return getConsoleUiUrl() + "#" + packageId.getInstallationPath() + ".zip";
         return constructUrl(CONSOLE_UI_BASE_PATH, null, packageId.getInstallationPath() + ".zip");
     }
 
     public abstract boolean login(String username, String password) throws IOException;
+
+    protected static String marshalWorkspaceFilter(WorkspaceFilter filter) throws Exception {
+        JSONArray jsonArray = new JSONArray();
+        List<PathFilterSet> filterSets = filter.getFilterSets();
+        for (PathFilterSet filterSet : filterSets) {
+            JSONObject jsonFilterSet = new JSONObject();
+            jsonFilterSet.put("root", filterSet.getRoot());
+
+            final JSONArray rules = new JSONArray();
+            jsonFilterSet.put("rules", rules);
+
+            if (filterSet.getEntries() != null) {
+                for (FilterSet.Entry<PathFilter> entry : filterSet.getEntries()) {
+                    if (entry.getFilter() instanceof DefaultPathFilter) {
+                        JSONObject rule = new JSONObject();
+                        final String pattern = ((DefaultPathFilter) entry.getFilter()).getPattern();
+                        rule.put("pattern", pattern);
+                        rule.put("modifier", entry.isInclude() ? "include" : "exclude");
+                        rules.put(rule);
+                    }
+                }
+            }
+
+            jsonArray.put(jsonFilterSet);
+        }
+
+        return jsonArray.toString();
+    }
 
     /**
      * The CRX PackageManagerServlet does not support GET requests. The only use for GET is to check service
@@ -648,6 +700,14 @@ public abstract class AbstractPackageManagerClient implements PackageManagerClie
         public String getMessage() {
             throw new UnsupportedOperationException("getMessage not implemented");
         }
+
+        @Override
+        public String toString() {
+            return "ListResponseImpl{" +
+                    "results=" + results +
+                    ", total=" + total +
+                    '}';
+        }
     }
 
     static class ListResultImpl implements ListResult {
@@ -676,6 +736,15 @@ public abstract class AbstractPackageManagerClient implements PackageManagerClie
             boolean needsRewrap = result.has(KEY_NEEDS_REWRAP) && result.getBoolean(KEY_NEEDS_REWRAP);
             return new ListResultImpl(packId, hasSnapshot, needsRewrap);
         }
+
+        @Override
+        public String toString() {
+            return "ListResultImpl{" +
+                    "packId=" + packId +
+                    ", hasSnapshot=" + hasSnapshot +
+                    ", needsRewrap=" + needsRewrap +
+                    '}';
+        }
     }
 
     static class DownloadResponseImpl implements DownloadResponse {
@@ -694,8 +763,15 @@ public abstract class AbstractPackageManagerClient implements PackageManagerClie
         public File getContent() {
             return content;
         }
-    }
 
+        @Override
+        public String toString() {
+            return "DownloadResponseImpl{" +
+                    "length=" + length +
+                    ", content=" + content +
+                    '}';
+        }
+    }
 
     protected static abstract class ResponseBuilder {
         protected abstract ResponseBuilder forPackId(PackId packId);
@@ -707,6 +783,7 @@ public abstract class AbstractPackageManagerClient implements PackageManagerClie
         protected abstract ListResponse getListResponse() throws Exception;
         protected abstract DetailedResponse getDetailedResponse(ResponseProgressListener listener) throws Exception;
         protected abstract DownloadResponse getDownloadResponse(File outputFile) throws Exception;
+        protected abstract SimpleResponse getUpdateResponse() throws Exception;
     }
 
     //-------------------------------------------------------------------------
@@ -725,6 +802,26 @@ public abstract class AbstractPackageManagerClient implements PackageManagerClie
      */
     public final PackId identify(File file, boolean strict) throws IOException {
         return PackId.identifyPackage(file, strict);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean validate(File file, ValidationOptions options, ResponseProgressListener listener) throws IOException {
+        if (file == null) {
+            throw new NullPointerException("file");
+        }
+
+        final ResponseProgressListener listen = listener != null ? listener : DEFAULT_LISTENER;
+
+        listen.onLog("Identifying package.");
+        PackId packageId = identify(file, true);
+        if (packageId == null) {
+            listen.onLog("Failed to identify package: " + file.getAbsolutePath());
+            return false;
+        }
+
+        return ValidationUtil.validatePackage(file, options, listen);
     }
 
     /**
@@ -923,6 +1020,61 @@ public abstract class AbstractPackageManagerClient implements PackageManagerClie
         return getResponseBuilder().forPackId(packageId)
                 .withParam(KEY_CMD, CMD_DRY_RUN)
                 .getDetailedResponse(listener);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public final SimpleResponse create(PackId packageId) throws Exception {
+        if (packageId == null) {
+            throw new NullPointerException("packageId");
+        }
+
+        return getResponseBuilder().forPackId(packageId)
+                .withParam(KEY_CMD, CMD_CREATE)
+                .withParam(KEY_GROUP_NAME, packageId.getGroup())
+                .withParam(KEY_PACKAGE_NAME, packageId.getName())
+                .withParam(KEY_PACKAGE_VERSION, packageId.getVersion())
+                .getSimpleResponse();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public final SimpleResponse updateFilter(PackId packageId, WorkspaceFilter filter) throws Exception {
+        if (packageId == null) {
+            throw new NullPointerException("packageId");
+        }
+        if (filter == null) {
+            throw new NullPointerException("filter");
+        }
+
+        return getResponseBuilder()
+                .withParam(KEY_PATH, packageId.getInstallationPath() + ".zip")
+                .withParam(KEY_GROUP_NAME, packageId.getGroup())
+                .withParam(KEY_PACKAGE_NAME, packageId.getName())
+                .withParam(KEY_VERSION, packageId.getVersion())
+                .withParam(KEY_FILTER, marshalWorkspaceFilter(filter))
+                .getUpdateResponse();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public final SimpleResponse move(PackId packageId, PackId moveToId) throws Exception {
+        if (packageId == null) {
+            throw new NullPointerException("packageId");
+        }
+        if (moveToId == null) {
+            throw new NullPointerException("moveToId");
+        }
+
+        return getResponseBuilder()
+                .withParam(KEY_PATH, packageId.getInstallationPath() + ".zip")
+                .withParam(KEY_GROUP_NAME, moveToId.getGroup())
+                .withParam(KEY_PACKAGE_NAME, moveToId.getName())
+                .withParam(KEY_VERSION, moveToId.getVersion())
+                .getUpdateResponse();
     }
 
     /**

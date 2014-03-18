@@ -25,56 +25,54 @@
  * For more information, please refer to <http://unlicense.org/>
  */
 
-package net.adamcin.granite.client.packman;
+package net.adamcin.granite.client.packman.validation;
 
 import net.adamcin.commons.testing.junit.FailUtil;
+import net.adamcin.granite.client.packman.WspFilter;
 import org.apache.jackrabbit.vault.fs.api.WorkspaceFilter;
 import org.apache.jackrabbit.vault.fs.config.DefaultWorkspaceFilter;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Created by madamcin on 3/14/14.
  */
-public class ValidationUtilTest {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ValidationUtilTest.class);
-
-    static final ResponseProgressListener LISTENER = new LoggingListener(LOGGER, LoggingListener.Level.DEBUG);
+public class PackageValidatorTest {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PackageValidatorTest.class);
 
     @Test
     public void testCheckFilter() {
-        try {
+        WspFilter filter = loadFromResource("testCheckFilter/check1.filter.xml");
+        ValidationOptions options =
+                new DefaultValidationOptions(filter, false);
+        assertEquals("a filter validated against itself should always return VALID",
+                ValidationResult.VALID,
+                PackageValidator.checkFilter(options, filter));
 
-            WorkspaceFilter filter = loadFromResource("testCheckFilter/check1.filter.xml");
-            ValidationOptions options = new DefaultValidationOptions(filter, false);
-            assertTrue("a filter validated against itself should always return true",
-                    ValidationUtil.checkFilter(options, filter, LISTENER));
+        WspFilter valid = loadFromResource("testCheckFilter/check1.valid.xml");
+        assertEquals("a matching filter set must contain all rules from the covering validation filter set",
+                ValidationResult.VALID,
+                PackageValidator.checkFilter(options, valid));
 
-            WorkspaceFilter valid = loadFromResource("testCheckFilter/check1.valid.xml");
-            assertTrue("a matching filter set must contain all rules from the covering validation filter set",
-                    ValidationUtil.checkFilter(options, valid, LISTENER));
+        WspFilter omission = loadFromResource("testCheckFilter/check1.omission.xml");
+        assertEquals("a matching filter set must contain all rules from the covering validation filter set",
+                ValidationResult.Reason.ROOT_MISSING_RULES,
+                PackageValidator.checkFilter(options, omission).getReason());
 
-            WorkspaceFilter omission = loadFromResource("testCheckFilter/check1.omission.xml");
-            assertFalse("a matching filter set must contain all rules from the covering validation filter set",
-                    ValidationUtil.checkFilter(options, omission, LISTENER));
-
-            WorkspaceFilter wrongOrder = loadFromResource("testCheckFilter/check1.wrongOrder.xml");
-            assertFalse("a matching filter set must contain all validation rules in the correct order, after all other rules",
-                    ValidationUtil.checkFilter(options, wrongOrder, LISTENER));
-
-
-
-        } catch (IOException e) {
-            FailUtil.sprintFail(e);
-        }
+        WspFilter wrongOrder = loadFromResource("testCheckFilter/check1.wrongOrder.xml");
+        assertEquals("a matching filter set must contain all validation rules in the correct order, after all other rules",
+                ValidationResult.Reason.ROOT_MISSING_RULES,
+                PackageValidator.checkFilter(options, wrongOrder).getReason());
     }
 
-    private WorkspaceFilter loadFromResource(String path) {
+    private WspFilter loadFromResource(String path) {
+        return WspFilter.adaptWorkspaceFilter(loadFullFromResource(path));
+    }
+
+    private WorkspaceFilter loadFullFromResource(String path) {
         DefaultWorkspaceFilter filter = new DefaultWorkspaceFilter();
         try {
             filter.load(getClass().getClassLoader().getResourceAsStream(path));
@@ -83,6 +81,5 @@ public class ValidationUtilTest {
         }
         return filter;
     }
-
 
 }

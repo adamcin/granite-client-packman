@@ -32,8 +32,6 @@ import net.adamcin.commons.testing.junit.TestBody;
 import org.apache.commons.io.IOUtils;
 import org.apache.jackrabbit.vault.fs.api.PathFilterSet;
 import org.apache.jackrabbit.vault.fs.api.WorkspaceFilter;
-import org.apache.jackrabbit.vault.fs.config.DefaultWorkspaceFilter;
-import org.apache.jackrabbit.vault.fs.filter.DefaultPathFilter;
 import org.apache.jackrabbit.vault.packaging.PackageManager;
 import org.apache.jackrabbit.vault.packaging.PackagingService;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
@@ -48,9 +46,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public abstract class AbstractPackageManagerClientITBase {
     public final Logger LOGGER = LoggerFactory.getLogger(getClass());
@@ -231,13 +227,12 @@ public abstract class AbstractPackageManagerClientITBase {
 
                 assertTrue("package should exist on server", client.existsOnServer(id));
 
-                WorkspaceFilter origWSPFilter = new DefaultWorkspaceFilter();
                 String theOneRoot = "/tmp/test-update-filter";
                 String theOnePattern = theOneRoot + "(/.*)?";
-                PathFilterSet origFilterSet = new PathFilterSet(theOneRoot);
-                origFilterSet.addInclude(new DefaultPathFilter(theOnePattern));
-                origWSPFilter.getFilterSets().add(origFilterSet);
 
+                WspFilter.Root origRoot =new WspFilter.Root(theOneRoot,
+                        new WspFilter.Rule(true, theOnePattern));
+                WspFilter origWSPFilter = new WspFilter(origRoot);
 
                 LOGGER.info("updating filter: {}", client.updateFilter(id, origWSPFilter));
 
@@ -261,18 +256,19 @@ public abstract class AbstractPackageManagerClientITBase {
                     assertFalse("package filter sets should not be empty", filterSets.isEmpty());
 
                     PathFilterSet filterSet = filterSets.get(0);
+                    WspFilter.Root archiveFilterRoot = WspFilter.adaptFilterSet(filterSet);
 
-                    assertEquals("filterSet root should be the same as before.", theOneRoot, filterSet.getRoot());
+                    assertEquals("filterSet root should be the same as before.", theOneRoot, archiveFilterRoot.getPath());
 
-                    assertFalse("package filter set rules should not be empty", filterSet.getEntries().isEmpty());
+                    assertFalse("package filter set rules should not be empty", archiveFilterRoot.getRules().isEmpty());
 
                     assertTrue("package filter rule should be an include",
-                            filterSet.getEntries().get(0).isInclude());
+                            archiveFilterRoot.getRules().get(0).isInclude());
 
-                    DefaultPathFilter pathFilter = (DefaultPathFilter) filterSet.getEntries().get(0).getFilter();
+                    WspFilter.Rule archiveRule = archiveFilterRoot.getRules().get(0);
 
                     assertEquals("filter pattern should be the same as before.",
-                            theOnePattern, pathFilter.getPattern());
+                            theOnePattern, archiveRule.getPattern());
 
                 } catch (IOException e) {
                     FailUtil.sprintFail(e);

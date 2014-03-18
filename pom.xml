@@ -199,6 +199,14 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20080701</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- these dependencies are necessary for use of the validation package at runtime, but are not needed for compile-time -->
+        <dependency>
             <groupId>org.apache.jackrabbit</groupId>
             <artifactId>jackrabbit-spi-commons</artifactId>
             <version>${jackrabbit.version}</version>
@@ -211,11 +219,13 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>org.json</groupId>
-            <artifactId>json</artifactId>
-            <version>20080701</version>
-            <scope>compile</scope>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>1.4</version>
+            <scope>runtime</scope>
         </dependency>
+        <!-- end runtime dependencies -->
+
 
         <dependency>
             <groupId>com.ning</groupId>
@@ -264,12 +274,6 @@
             <groupId>net.adamcin.commons</groupId>
             <artifactId>net.adamcin.commons.testing</artifactId>
             <version>0.6.0</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>1.4</version>
             <scope>test</scope>
         </dependency>
 

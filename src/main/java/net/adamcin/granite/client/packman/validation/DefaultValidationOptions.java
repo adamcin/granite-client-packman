@@ -25,28 +25,34 @@
  * For more information, please refer to <http://unlicense.org/>
  */
 
-package net.adamcin.granite.client.packman;
+package net.adamcin.granite.client.packman.validation;
 
-import org.apache.jackrabbit.vault.fs.api.WorkspaceFilter;
+import net.adamcin.granite.client.packman.WspFilter;
 
 /**
- * Simple interface for passing options to the validate method
+ * Default implementation of {@link ValidationOptions}
  */
-public interface ValidationOptions {
+public class DefaultValidationOptions implements ValidationOptions {
+
+    private final WspFilter validationFilter;
+    private final boolean allowNonCoveredRoots;
+
+    public DefaultValidationOptions(WspFilter validationFilter, boolean allowNonCoveredRoots) {
+        this.validationFilter = validationFilter;
+        this.allowNonCoveredRoots = allowNonCoveredRoots;
+    }
 
     /**
-     * return the {@link org.apache.jackrabbit.vault.fs.api.WorkspaceFilter} against
-     * which a package's {@link org.apache.jackrabbit.vault.fs.api.WorkspaceFilter}
-     * will be validated
-     *
-     * @return the validation {@link org.apache.jackrabbit.vault.fs.api.WorkspaceFilter}
+     * {@inheritDoc}
      */
-    WorkspaceFilter getValidationFilter();
+    public WspFilter getValidationFilter() {
+        return validationFilter;
+    }
 
     /**
-     * Allow the package filter to specify filter roots which are not covered by the validation filter, and which are not ancestors of any roots specified by the validation filter
-     *
-     * @return true to allow non-covered roots
+     * {@inheritDoc}
      */
-    boolean isAllowNonCoveredRoots();
+    public boolean isAllowNonCoveredRoots() {
+        return allowNonCoveredRoots;
+    }
 }

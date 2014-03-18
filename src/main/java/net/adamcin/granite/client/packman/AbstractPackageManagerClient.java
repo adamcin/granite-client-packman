@@ -27,11 +27,6 @@
 
 package net.adamcin.granite.client.packman;
 
-import org.apache.jackrabbit.vault.fs.api.FilterSet;
-import org.apache.jackrabbit.vault.fs.api.PathFilter;
-import org.apache.jackrabbit.vault.fs.api.PathFilterSet;
-import org.apache.jackrabbit.vault.fs.api.WorkspaceFilter;
-import org.apache.jackrabbit.vault.fs.filter.DefaultPathFilter;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -257,34 +252,6 @@ public abstract class AbstractPackageManagerClient implements PackageManagerClie
     }
 
     public abstract boolean login(String username, String password) throws IOException;
-
-    protected static String marshalWorkspaceFilter(WorkspaceFilter filter) throws Exception {
-        JSONArray jsonArray = new JSONArray();
-        List<PathFilterSet> filterSets = filter.getFilterSets();
-        for (PathFilterSet filterSet : filterSets) {
-            JSONObject jsonFilterSet = new JSONObject();
-            jsonFilterSet.put("root", filterSet.getRoot());
-
-            final JSONArray rules = new JSONArray();
-            jsonFilterSet.put("rules", rules);
-
-            if (filterSet.getEntries() != null) {
-                for (FilterSet.Entry<PathFilter> entry : filterSet.getEntries()) {
-                    if (entry.getFilter() instanceof DefaultPathFilter) {
-                        JSONObject rule = new JSONObject();
-                        final String pattern = ((DefaultPathFilter) entry.getFilter()).getPattern();
-                        rule.put("pattern", pattern);
-                        rule.put("modifier", entry.isInclude() ? "include" : "exclude");
-                        rules.put(rule);
-                    }
-                }
-            }
-
-            jsonArray.put(jsonFilterSet);
-        }
-
-        return jsonArray.toString();
-    }
 
     /**
      * The CRX PackageManagerServlet does not support GET requests. The only use for GET is to check service
@@ -807,26 +774,6 @@ public abstract class AbstractPackageManagerClient implements PackageManagerClie
     /**
      * {@inheritDoc}
      */
-    public boolean validate(File file, ValidationOptions options, ResponseProgressListener listener) throws IOException {
-        if (file == null) {
-            throw new NullPointerException("file");
-        }
-
-        final ResponseProgressListener listen = listener != null ? listener : DEFAULT_LISTENER;
-
-        listen.onLog("Identifying package.");
-        PackId packageId = identify(file, true);
-        if (packageId == null) {
-            listen.onLog("Failed to identify package: " + file.getAbsolutePath());
-            return false;
-        }
-
-        return ValidationUtil.validatePackage(file, options, listen);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     public final void waitForService() throws Exception {
         boolean checkTimeout = serviceTimeout >= 0L;
         int tries = 0;
@@ -1041,7 +988,7 @@ public abstract class AbstractPackageManagerClient implements PackageManagerClie
     /**
      * {@inheritDoc}
      */
-    public final SimpleResponse updateFilter(PackId packageId, WorkspaceFilter filter) throws Exception {
+    public final SimpleResponse updateFilter(PackId packageId, WspFilter filter) throws Exception {
         if (packageId == null) {
             throw new NullPointerException("packageId");
         }
@@ -1054,7 +1001,7 @@ public abstract class AbstractPackageManagerClient implements PackageManagerClie
                 .withParam(KEY_GROUP_NAME, packageId.getGroup())
                 .withParam(KEY_PACKAGE_NAME, packageId.getName())
                 .withParam(KEY_VERSION, packageId.getVersion())
-                .withParam(KEY_FILTER, marshalWorkspaceFilter(filter))
+                .withParam(KEY_FILTER, filter.toJSONString(0))
                 .getUpdateResponse();
     }
 

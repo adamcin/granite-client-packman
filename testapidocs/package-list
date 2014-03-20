@@ -2,3 +2,4 @@ net.adamcin.granite.client.packman
 net.adamcin.granite.client.packman.async
 net.adamcin.granite.client.packman.http3
 net.adamcin.granite.client.packman.http4
+net.adamcin.granite.client.packman.validation

@@ -132,16 +132,17 @@ public final class PackageValidator {
             WorkspaceFilter filter = convertToWorkspaceFilter(wspFilter);
             for (Root archiveRoot : archiveFilter.getRoots()) {
                 String root = archiveRoot.getPath();
-                if (!filter.covers(root) && !options.isAllowNonCoveredRoots()) {
+
+                if (filter.covers(root)) {
+                    PathFilterSet covering = filter.getCoveringFilterSet(root);
+                    Root coveringRoot =
+                            WspFilter.adaptFilterSet(covering);
+
+                    if (!hasRequiredRules(coveringRoot, archiveRoot)) {
+                        return ValidationResult.rootMissingRules(archiveRoot, coveringRoot);
+                    }
+                } else if (!options.isAllowNonCoveredRoots()) {
                     return ValidationResult.rootNotAllowed(archiveRoot);
-                }
-
-                PathFilterSet covering = filter.getCoveringFilterSet(root);
-                Root coveringRoot =
-                        WspFilter.adaptFilterSet(covering);
-
-                if (!hasRequiredRules(coveringRoot, archiveRoot)) {
-                    return ValidationResult.rootMissingRules(archiveRoot, coveringRoot);
                 }
             }
         }

@@ -52,6 +52,15 @@ public interface PackageManagerClient {
     void setServiceTimeout(long serviceTimeout);
 
     /**
+     * Set a delay in milliseconds for calls to the {@link #waitForService()} method.
+     * Increase this value to account for delayed OSGi bundle cycling on the server after
+     * installing packages with embedded bundles.
+     * Set this to a negative number or zero for no delay.
+     * @param waitDelay delay in milliseconds
+     */
+    void setWaitDelay(long waitDelay);
+
+    /**
      * @return the base URL (not including /crx.*) of the target server
      */
     String getBaseUrl();

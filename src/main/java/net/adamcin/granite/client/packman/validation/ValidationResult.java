@@ -30,16 +30,21 @@ package net.adamcin.granite.client.packman.validation;
 import net.adamcin.granite.client.packman.WspFilter;
 
 import java.io.IOException;
+import java.io.Serializable;
 
 /**
  * Encapsulation class for the various ways that a package validation can fail.
  */
-public final class ValidationResult {
+public final class ValidationResult implements Serializable {
 
-    public static final ValidationResult VALID = new ValidationResult(Reason.SUCCESS);
+    private static final ValidationResult VALID = new ValidationResult(Reason.SUCCESS);
+    private static final ValidationResult INVALID_META_INF = new ValidationResult(Reason.INVALID_META_INF);
+
+    private static final long serialVersionUID = 3183860341927890671L;
 
     public static enum Reason {
         SUCCESS,
+        FORBIDDEN_EXTENSION,
         FAILED_TO_ID,
         FAILED_TO_OPEN,
         INVALID_META_INF,
@@ -48,30 +53,37 @@ public final class ValidationResult {
     }
 
     private final Reason reason;
+    private final String forbiddenEntry;
     private final WspFilter.Root invalidRoot;
     private final WspFilter.Root coveringRoot;
     private final IOException cause;
 
-    public ValidationResult(Reason reason) {
+    protected ValidationResult(Reason reason) {
         this(reason, null, null);
     }
 
-    public ValidationResult(Reason reason, WspFilter.Root invalidRoot) {
-        this(reason, invalidRoot, null);
-    }
-
-    public ValidationResult(Reason reason, WspFilter.Root invalidRoot, WspFilter.Root coveringRoot) {
+    protected ValidationResult(Reason reason, WspFilter.Root invalidRoot, WspFilter.Root coveringRoot) {
         this.reason = reason;
         this.invalidRoot = invalidRoot;
         this.coveringRoot = coveringRoot;
         this.cause = null;
+        this.forbiddenEntry = null;
     }
 
-    public ValidationResult(Reason reason, IOException cause) {
+    protected ValidationResult(Reason reason, IOException cause) {
         this.reason = reason;
         this.invalidRoot = null;
         this.coveringRoot = null;
         this.cause = cause;
+        this.forbiddenEntry = null;
+    }
+
+    protected ValidationResult(Reason reason, String forbiddenEntry) {
+        this.reason = reason;
+        this.invalidRoot = null;
+        this.coveringRoot = null;
+        this.cause = null;
+        this.forbiddenEntry = forbiddenEntry;
     }
 
     public Reason getReason() {
@@ -88,5 +100,37 @@ public final class ValidationResult {
 
     public IOException getCause() {
         return cause;
+    }
+
+    public String getForbiddenEntry() {
+        return forbiddenEntry;
+    }
+
+    public static ValidationResult success() {
+        return VALID;
+    }
+
+    public static ValidationResult invalidMetaInf() {
+        return INVALID_META_INF;
+    }
+
+    public static ValidationResult failedToId(IOException cause) {
+        return new ValidationResult(Reason.FAILED_TO_ID, cause);
+    }
+
+    public static ValidationResult failedToOpen(IOException cause) {
+        return new ValidationResult(Reason.FAILED_TO_OPEN, cause);
+    }
+
+    public static ValidationResult rootNotAllowed(WspFilter.Root invalidRoot) {
+        return new ValidationResult(Reason.ROOT_NOT_ALLOWED, invalidRoot, null);
+    }
+
+    public static ValidationResult rootMissingRules(WspFilter.Root invalidRoot, WspFilter.Root coveringRoot) {
+        return new ValidationResult(Reason.ROOT_MISSING_RULES, invalidRoot, coveringRoot);
+    }
+
+    public static ValidationResult forbiddenExtension(String forbiddenEntry) {
+        return new ValidationResult(Reason.FORBIDDEN_EXTENSION, forbiddenEntry);
     }
 }

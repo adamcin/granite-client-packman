@@ -36,17 +36,20 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * A simpler representation of a workspace filter with fewer API encumbrances. Can be
  * easily converted to/from JSON and simple spec formats, as well as from a full
  * {@link org.apache.jackrabbit.vault.fs.api.WorkspaceFilter} implementation.
  */
-public final class WspFilter {
+public final class WspFilter implements Serializable {
 
     private static final String ROOT = "root";
     private static final String RULES = "rules";
@@ -54,8 +57,10 @@ public final class WspFilter {
     private static final String MODIFIER = "modifier";
     private static final String INCLUDE = "include";
     private static final String EXCLUDE = "exclude";
+    private static final long serialVersionUID = 4356479717129608614L;
 
-    public static final class Root {
+    public static final class Root implements Serializable {
+        private static final long serialVersionUID = -7544133078856453865L;
         private String path;
         private List<Rule> rules;
 
@@ -97,9 +102,26 @@ public final class WspFilter {
             result = 31 * result + rules.hashCode();
             return result;
         }
+
+        @Override
+        public String toString() {
+            return "Root{" +
+                    "path='" + path + '\'' +
+                    ", rules=" + rules +
+                    '}';
+        }
+
+        public String toSpec() {
+            StringBuilder sb = new StringBuilder(path).append("\n");
+            for (Rule rule : rules) {
+                sb.append(rule.toSpec()).append("\n");
+            }
+            return sb.toString();
+        }
     }
 
-    public static final class Rule {
+    public static final class Rule implements Serializable {
+        private static final long serialVersionUID = -6380223852559765971L;
         private final boolean include;
         private final String pattern;
 
@@ -135,6 +157,18 @@ public final class WspFilter {
             result = 31 * result + pattern.hashCode();
             return result;
         }
+
+        @Override
+        public String toString() {
+            return "Rule{" +
+                    "include=" + include +
+                    ", pattern='" + pattern + '\'' +
+                    '}';
+        }
+
+        public String toSpec() {
+            return (include ? "+" : "-") + pattern;
+        }
     }
 
     private final List<Root> roots;
@@ -149,6 +183,38 @@ public final class WspFilter {
 
     public List<Root> getRoots() {
         return roots;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        WspFilter wspFilter = (WspFilter) o;
+
+        if (!roots.equals(wspFilter.roots)) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return roots.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "WspFilter{" +
+                "roots=" + roots +
+                '}';
+    }
+
+    public String toSpec() {
+        StringBuilder sb = new StringBuilder();
+        for (Root root : roots) {
+            sb.append(root.toSpec());
+        }
+        return sb.toString();
     }
 
     public String toJSONString() throws JSONException {
@@ -186,28 +252,31 @@ public final class WspFilter {
      * 3. each non-empty, non-comment line after a filter root that begins with a "+" or "-" defines an include or exclude rule, respectively.
      *
      * @param text
-     * @return
+     * @return a constructed {@link WspFilter} or null if parsing failed
      */
     public static WspFilter parseSimpleSpec(String text) {
         if (text == null) {
             return null;
         }
-        String[] lines = text.split("(\r?\n)+");
+        String[] lines = text.split("\r?\n");
         List<Root> roots = new ArrayList<Root>();
         String rootPath = null;
         List<Rule> currentRules = null;
-        for (String line : lines) {
+        for (int lineNumber = 1; lineNumber <= lines.length; lineNumber++) {
+            String line = lines[lineNumber - 1];
+            String noComment = line;
             // remove comment from line
             int hashIndex = line.indexOf("#");
             if (hashIndex >= 0) {
-                line = line.substring(0, hashIndex);
+                noComment = line.substring(0, hashIndex);
             }
-            String trimmed = line.trim();
+            String trimmed = noComment.trim();
 
             if (trimmed.isEmpty()) {
                 // skip
             } else if (!trimmed.startsWith("/") && rootPath == null) {
-                throw new IllegalArgumentException("Simple spec must begin with an absolute path representing the first filter root.");
+                String message = String.format("Line %s: filter spec must begin with an absolute path representing the first filter root.", lineNumber);
+                throw new IllegalArgumentException(message);
             } else if (trimmed.startsWith("/")) {
                 if (rootPath != null) {
                     roots.add(new Root(rootPath, currentRules));
@@ -215,14 +284,24 @@ public final class WspFilter {
                 rootPath = trimmed;
                 currentRules = new ArrayList<Rule>();
             } else {
-                if (trimmed.startsWith("+")) {
-                    currentRules.add(new Rule(true, trimmed.substring(1)));
-                } else if (trimmed.startsWith("-")) {
-                    currentRules.add(new Rule(false, trimmed.substring(1)));
+                if (trimmed.startsWith("+") || trimmed.startsWith("-")) {
+
+                    String pattern = trimmed.substring(1);
+                    try {
+                        Pattern.compile(pattern);
+                    } catch (PatternSyntaxException e) {
+                        String message = String.format("Line %s: invalid regex -> %s", lineNumber, pattern);
+                        throw new IllegalArgumentException(message, e);
+                    }
+                    currentRules.add(new Rule(trimmed.startsWith("+"), pattern));
                 } else {
-                    throw new IllegalArgumentException("Lines must be empty, or begin with a # (comment), '/' (root path), '+' (include pattern), or '-' (exclude pattern).");
+                    String message = String.format("Line %s: invalid line -> %s", lineNumber, line);
+                    throw new IllegalArgumentException(message);
                 }
             }
+        }
+        if (rootPath != null) {
+            roots.add(new Root(rootPath, currentRules));
         }
         return new WspFilter(roots);
     }

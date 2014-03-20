@@ -29,6 +29,9 @@ package net.adamcin.granite.client.packman.validation;
 
 import net.adamcin.granite.client.packman.WspFilter;
 
+import java.util.List;
+
+
 /**
  * Simple interface for passing options to the validate method
  */
@@ -49,4 +52,12 @@ public interface ValidationOptions {
      * @return true to allow non-covered roots
      */
     boolean isAllowNonCoveredRoots();
+
+    /**
+     * Define a list of forbidden file extensions, each of which must begin with a period,
+     * followed by one-to-many word characters or periods. Empty elements will be skipped.
+     * If an element does not begin with a period, it will be added before evaluation.
+     * @return a list of extensions, or null
+     */
+    List<String> getForbiddenExtensions();
 }

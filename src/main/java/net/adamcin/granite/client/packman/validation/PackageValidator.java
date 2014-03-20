@@ -42,6 +42,10 @@ import org.apache.jackrabbit.vault.packaging.VaultPackage;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 /**
  * Created by madamcin on 3/14/14.
@@ -53,9 +57,10 @@ public final class PackageValidator {
     /**
      * Validates a package file against a workspace filter. Validation consists of the following:
      *   1. Strict identify
-     *   2. Call {@link org.apache.jackrabbit.vault.packaging.PackageManager#open(java.io.File, boolean)}
-     *   3. Call {@link org.apache.jackrabbit.vault.packaging.VaultPackage#isValid()}
-     *   4. Check package {@link org.apache.jackrabbit.vault.fs.api.WorkspaceFilter}
+     *   2. Scan file for forbidden extensions
+     *   3. Call {@link org.apache.jackrabbit.vault.packaging.PackageManager#open(java.io.File, boolean)}
+     *   4. Call {@link org.apache.jackrabbit.vault.packaging.VaultPackage#isValid()}
+     *   5. Check package {@link org.apache.jackrabbit.vault.fs.api.WorkspaceFilter}
      *      against validation {@link org.apache.jackrabbit.vault.fs.api.WorkspaceFilter}
      *
      * @param file the package file to be validated
@@ -63,7 +68,7 @@ public final class PackageValidator {
      * @return true if the package is completely valid, false otherwise.
      * @throws IOException if the file can not be read, or it is not a zip file
      */
-    public ValidationResult validate(File file, ValidationOptions options) {
+    public static ValidationResult validate(File file, ValidationOptions options) {
         if (file == null) {
             throw new NullPointerException("file");
         }
@@ -75,6 +80,21 @@ public final class PackageValidator {
             }
         } catch (IOException e) {
             return new ValidationResult(Reason.FAILED_TO_ID, e);
+        }
+
+        if (options.getForbiddenExtensions() != null) {
+            try {
+                JarFile jarFile = new JarFile(file);
+                ValidationResult result =
+                        checkForbiddenExtensions(jarFile,
+                                options.getForbiddenExtensions());
+
+                if (result.getReason() != Reason.SUCCESS) {
+                    return result;
+                }
+            } catch (IOException e) {
+                return ValidationResult.failedToOpen(e);
+            }
         }
 
         return PackageValidator.validatePackage(file, options);
@@ -113,7 +133,7 @@ public final class PackageValidator {
             for (Root archiveRoot : archiveFilter.getRoots()) {
                 String root = archiveRoot.getPath();
                 if (!filter.covers(root) && !options.isAllowNonCoveredRoots()) {
-                    return new ValidationResult(Reason.ROOT_NOT_ALLOWED, archiveRoot);
+                    return ValidationResult.rootNotAllowed(archiveRoot);
                 }
 
                 PathFilterSet covering = filter.getCoveringFilterSet(root);
@@ -121,13 +141,36 @@ public final class PackageValidator {
                         WspFilter.adaptFilterSet(covering);
 
                 if (!hasRequiredRules(coveringRoot, archiveRoot)) {
-                    return new ValidationResult(Reason.ROOT_MISSING_RULES,
-                            archiveRoot, coveringRoot);
+                    return ValidationResult.rootMissingRules(archiveRoot, coveringRoot);
                 }
             }
         }
 
-        return ValidationResult.VALID;
+        return ValidationResult.success();
+    }
+
+    protected static ValidationResult checkForbiddenExtensions(JarFile jarFile, List<String> forbiddenExtensions) throws IOException {
+        if (forbiddenExtensions != null) {
+            Enumeration<JarEntry> entries = jarFile.entries();
+            while (entries.hasMoreElements()) {
+                JarEntry entry = entries.nextElement();
+                if (!entry.isDirectory()
+                        && entry.getName().startsWith("jcr_root/")) {
+                    String entryName = entry.getName();
+                    for (String _ext : forbiddenExtensions) {
+                        String ext = _ext.trim();
+                        if (!ext.startsWith(".")) {
+                            ext = "." + ext;
+                        }
+
+                        if (entryName.endsWith(ext)) {
+                            return ValidationResult.forbiddenExtension(entryName);
+                        }
+                    }
+                }
+            }
+        }
+        return ValidationResult.success();
     }
 
     protected static boolean hasRequiredRules(Root coveringRoot, Root archiveRoot) {

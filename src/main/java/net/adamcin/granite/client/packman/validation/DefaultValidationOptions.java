@@ -29,18 +29,19 @@ package net.adamcin.granite.client.packman.validation;
 
 import net.adamcin.granite.client.packman.WspFilter;
 
+import java.io.Serializable;
+import java.util.List;
+
 /**
  * Default implementation of {@link ValidationOptions}
  */
-public class DefaultValidationOptions implements ValidationOptions {
+public class DefaultValidationOptions implements ValidationOptions, Serializable {
 
-    private final WspFilter validationFilter;
-    private final boolean allowNonCoveredRoots;
+    private static final long serialVersionUID = -2307974477755564878L;
 
-    public DefaultValidationOptions(WspFilter validationFilter, boolean allowNonCoveredRoots) {
-        this.validationFilter = validationFilter;
-        this.allowNonCoveredRoots = allowNonCoveredRoots;
-    }
+    private WspFilter validationFilter;
+    private boolean allowNonCoveredRoots;
+    private List<String> forbiddenExtensions;
 
     /**
      * {@inheritDoc}
@@ -54,5 +55,27 @@ public class DefaultValidationOptions implements ValidationOptions {
      */
     public boolean isAllowNonCoveredRoots() {
         return allowNonCoveredRoots;
+    }
+
+    public DefaultValidationOptions setValidationFilter(WspFilter validationFilter) {
+        this.validationFilter = validationFilter;
+        return this;
+    }
+
+    public DefaultValidationOptions setAllowNonCoveredRoots(boolean allowNonCoveredRoots) {
+        this.allowNonCoveredRoots = allowNonCoveredRoots;
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public List<String> getForbiddenExtensions() {
+        return forbiddenExtensions;
+    }
+
+    public DefaultValidationOptions setForbiddenExtensions(List<String> forbiddenExtensions) {
+        this.forbiddenExtensions = forbiddenExtensions;
+        return this;
     }
 }

@@ -132,6 +132,7 @@ public abstract class AbstractPackageManagerClient implements PackageManagerClie
     private String baseUrl = DEFAULT_BASE_URL;
     private long requestTimeout = -1L;
     private long serviceTimeout = -1L;
+    private long waitDelay = -1L;
 
     public Charset getCharset() {
         return charset;
@@ -198,6 +199,14 @@ public abstract class AbstractPackageManagerClient implements PackageManagerClie
 
     public void setServiceTimeout(long serviceTimeout) {
         this.serviceTimeout = serviceTimeout;
+    }
+
+    public long getWaitDelay() {
+        return waitDelay;
+    }
+
+    public void setWaitDelay(long waitDelay) {
+        this.waitDelay = waitDelay;
     }
 
     protected final String getHtmlUrl() {
@@ -775,6 +784,9 @@ public abstract class AbstractPackageManagerClient implements PackageManagerClie
      * {@inheritDoc}
      */
     public final void waitForService() throws Exception {
+        if (waitDelay >= 0L) {
+            Thread.sleep(waitDelay);
+        }
         boolean checkTimeout = serviceTimeout >= 0L;
         int tries = 0;
         final long stop = System.currentTimeMillis() + serviceTimeout;

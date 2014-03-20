@@ -42,6 +42,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public final class PackId implements Serializable, Comparable<PackId> {
+
     public static final Pattern PID_PATTERN = Pattern.compile("^([^:]+):([^:]+)(:([^:]*))?$");
 
     public static final String PROPERTIES_ENTRY = "META-INF/vault/properties.xml";
@@ -49,6 +50,8 @@ public final class PackId implements Serializable, Comparable<PackId> {
     public static final String PROP_NAME = "name";
     public static final String PROP_VERSION = "version";
     public static final String PROP_PATH = "path";
+
+    private static final long serialVersionUID = -2933986835157825071L;
 
     private final String group;
     private final String name;

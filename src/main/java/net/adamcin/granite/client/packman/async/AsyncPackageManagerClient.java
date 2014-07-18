@@ -27,15 +27,7 @@
 
 package net.adamcin.granite.client.packman.async;
 
-import com.ning.http.client.AsyncCompletionHandler;
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.Cookie;
-import com.ning.http.client.FilePart;
-import com.ning.http.client.ListenableFuture;
-import com.ning.http.client.Realm;
-import com.ning.http.client.Request;
-import com.ning.http.client.Response;
-import com.ning.http.client.StringPart;
+import com.ning.http.client.*;
 import net.adamcin.granite.client.packman.AbstractPackageManagerClient;
 import net.adamcin.granite.client.packman.DetailedResponse;
 import net.adamcin.granite.client.packman.DownloadResponse;
@@ -44,8 +36,10 @@ import net.adamcin.granite.client.packman.PackId;
 import net.adamcin.granite.client.packman.ResponseProgressListener;
 import net.adamcin.granite.client.packman.SimpleResponse;
 import net.adamcin.granite.client.packman.UnauthorizedException;
+import org.apache.commons.io.IOUtils;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -83,18 +77,49 @@ public final class AsyncPackageManagerClient extends AbstractPackageManagerClien
             };
 
     private static class DownloadResponseHandler extends AsyncCompletionHandler<DownloadResponse> {
-        final File outputFile;
+        private final File outputFile;
+        private final FileOutputStream out;
+        private boolean failed = false;
 
-        private DownloadResponseHandler(File outputFile) {
+        private DownloadResponseHandler(File outputFile) throws IOException {
+            if (outputFile.isDirectory()) {
+                throw new IOException("Cannot download to a directory. outputFile=" + outputFile.getAbsolutePath());
+            }
             this.outputFile = outputFile;
+            this.out = new FileOutputStream(this.outputFile);
+        }
+
+        @Override
+        public STATE onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
+            if (!failed) {
+                content.writeTo(this.out);
+            }
+            return STATE.CONTINUE;
+        }
+
+        @Override
+        public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+            return STATE.CONTINUE;
+        }
+
+        @Override
+        public STATE onStatusReceived(HttpResponseStatus status) throws Exception {
+            failed = (status.getStatusCode() != 200);
+            return failed ? STATE.ABORT : STATE.CONTINUE;
         }
 
         @Override public DownloadResponse onCompleted(Response response) throws Exception {
+            IOUtils.closeQuietly(this.out);
             return AbstractPackageManagerClient.parseDownloadResponse(
                     response.getStatusCode(),
                     response.getStatusText(),
-                    response.getResponseBodyAsStream(),
                     this.outputFile);
+        }
+
+        @Override
+        public void onThrowable(Throwable t) {
+            IOUtils.closeQuietly(this.out);
+            super.onThrowable(t);
         }
     }
 

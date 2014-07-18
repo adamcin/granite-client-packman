@@ -41,7 +41,6 @@ import org.apache.commons.io.IOUtils;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -76,10 +75,11 @@ public final class AsyncPackageManagerClient extends AbstractPackageManagerClien
                 }
             };
 
-    private static class DownloadResponseHandler extends AsyncCompletionHandler<DownloadResponse> {
+    private static class DownloadResponseHandler implements AsyncHandler<DownloadResponse> {
         private final File outputFile;
         private final FileOutputStream out;
-        private boolean failed = false;
+        private Throwable responseError = null;
+        private int status = 200;
 
         private DownloadResponseHandler(File outputFile) throws IOException {
             if (outputFile.isDirectory()) {
@@ -89,37 +89,36 @@ public final class AsyncPackageManagerClient extends AbstractPackageManagerClien
             this.out = new FileOutputStream(this.outputFile);
         }
 
-        @Override
         public STATE onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
-            if (!failed) {
+            if (status == 200) {
                 content.writeTo(this.out);
             }
             return STATE.CONTINUE;
         }
 
-        @Override
         public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
             return STATE.CONTINUE;
         }
 
-        @Override
         public STATE onStatusReceived(HttpResponseStatus status) throws Exception {
-            failed = (status.getStatusCode() != 200);
-            return failed ? STATE.ABORT : STATE.CONTINUE;
+            this.status = status.getStatusCode();
+            return this.status == 200 ? STATE.CONTINUE : STATE.ABORT;
         }
 
-        @Override public DownloadResponse onCompleted(Response response) throws Exception {
+        public DownloadResponse onCompleted() throws Exception {
             IOUtils.closeQuietly(this.out);
-            return AbstractPackageManagerClient.parseDownloadResponse(
-                    response.getStatusCode(),
-                    response.getStatusText(),
-                    this.outputFile);
+            if (this.responseError != null) {
+                this.outputFile.delete();
+                throw new IOException("Encountered error in response.", this.responseError);
+            } else if (status != 200) {
+                this.outputFile.delete();
+                throw new IOException("Invalid response status: " + status);
+            }
+            return AbstractPackageManagerClient.createDownloadResponse(this.outputFile);
         }
 
-        @Override
         public void onThrowable(Throwable t) {
             IOUtils.closeQuietly(this.out);
-            super.onThrowable(t);
         }
     }
 

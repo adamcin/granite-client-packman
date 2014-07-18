@@ -529,16 +529,10 @@ public abstract class AbstractPackageManagerClient implements PackageManagerClie
         }
     }
 
-    protected static DownloadResponse parseDownloadResponse(final int statusCode,
-                                                            final String statusText,
-                                                            final File outputFile)
+    protected static DownloadResponse createDownloadResponse(final File outputFile)
             throws IOException {
 
-        if (statusCode == 200) {
-            return new DownloadResponseImpl(outputFile.length(), outputFile);
-        } else {
-            throw new IOException("Invalid status code: " + statusCode);
-        }
+        return new DownloadResponseImpl(outputFile.length(), outputFile);
     }
 
     protected static abstract class Either<T, U> {

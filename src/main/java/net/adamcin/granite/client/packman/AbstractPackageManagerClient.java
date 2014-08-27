@@ -67,6 +67,7 @@ public abstract class AbstractPackageManagerClient implements PackageManagerClie
     public static final String DEFAULT_BASE_URL = "http://localhost:4502";
     public static final String DEFAULT_USERNAME = "admin";
     public static final String DEFAULT_PASSWORD = "admin";
+    public static final String DEFAULT_CHARSET = "utf-8";
     public static final int MIN_AUTOSAVE = 1024;
 
     public static final String MIME_ZIP = "application/zip";
@@ -128,7 +129,8 @@ public abstract class AbstractPackageManagerClient implements PackageManagerClie
     public static final String LEGACY_PARAM_TOKEN = ".token";
     public static final String LEGACY_VALUE_TOKEN = "";
 
-    private Charset charset = Charset.forName("utf-8");
+
+    private Charset charset = Charset.forName(DEFAULT_CHARSET);
     private String baseUrl = DEFAULT_BASE_URL;
     private long requestTimeout = -1L;
     private long serviceTimeout = -1L;
@@ -447,7 +449,8 @@ public abstract class AbstractPackageManagerClient implements PackageManagerClie
             throw new IOException(Integer.toString(statusCode) + " " + statusText);
         } else {
             try {
-                JSONTokener tokener = new JSONTokener(new InputStreamReader(stream, charset));
+                JSONTokener tokener = new JSONTokener(new InputStreamReader(stream,
+                        charset != null ? charset : DEFAULT_CHARSET));
                 final JSONObject json = new JSONObject(tokener);
 
                 final boolean success = json.has(KEY_SUCCESS) && json.getBoolean(KEY_SUCCESS);

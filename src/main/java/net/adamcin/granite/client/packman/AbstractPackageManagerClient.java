@@ -382,7 +382,8 @@ public abstract class AbstractPackageManagerClient implements PackageManagerClie
 
             BufferedReader reader = null;
             try {
-                reader = new BufferedReader(new InputStreamReader(stream, charset));
+                reader = new BufferedReader(new InputStreamReader(stream,
+                        charset != null ? charset : DEFAULT_CHARSET));
                 boolean isFailure = false;
                 boolean isStarted = false;
                 final List<String> failureBuilder = new ArrayList<String>();
@@ -473,7 +474,8 @@ public abstract class AbstractPackageManagerClient implements PackageManagerClie
         if (statusCode == 200) {
             try {
                 ArrayList<ListResult> results = new ArrayList<ListResult>();
-                JSONTokener tokener = new JSONTokener(new InputStreamReader(stream, charset));
+                JSONTokener tokener = new JSONTokener(new InputStreamReader(stream,
+                        charset != null ? charset : DEFAULT_CHARSET));
 
                 final JSONObject resultsObj = new JSONObject(tokener);
                 final JSONArray resultsArr = resultsObj.getJSONArray(KEY_RESULTS);

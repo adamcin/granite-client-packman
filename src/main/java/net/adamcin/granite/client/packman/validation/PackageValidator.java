@@ -65,8 +65,7 @@ public final class PackageValidator {
      *
      * @param file the package file to be validated
      * @param options the validation options
-     * @return true if the package is completely valid, false otherwise.
-     * @throws IOException if the file can not be read, or it is not a zip file
+     * @return the validation result
      */
     public static ValidationResult validate(File file, ValidationOptions options) {
         if (file == null) {

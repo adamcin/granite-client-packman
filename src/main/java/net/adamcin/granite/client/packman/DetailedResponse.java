@@ -54,7 +54,7 @@ public interface DetailedResponse extends ServiceResponse {
 
     /**
      * Lists the stack trace elements returned by the service if the request was unsuccessful.
-     * @return
+     * @return list of stack trace elements as strings
      */
     List<String> getStackTrace();
 }

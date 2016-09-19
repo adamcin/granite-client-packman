@@ -102,14 +102,14 @@ public interface PackageManagerClient {
      * This does not indicate whether the package has already been installed.
      * @param packageId the {@link PackId} representing the package
      * @return {@code true} if a package exists, {@code false} otherwise
-     * @throws Exception
+     * @throws Exception for unknown errors
      */
     boolean existsOnServer(PackId packageId) throws Exception;
 
     /**
      * List all packages
      * @return package list service response
-     * @throws Exception
+     * @throws Exception for unknown errors
      */
     ListResponse list() throws Exception;
 
@@ -117,7 +117,7 @@ public interface PackageManagerClient {
      * List all packages and filter by {@code query}
      * @param query can be null or empty string
      * @return package list service response filtered by {@code query}
-     * @throws Exception
+     * @throws Exception for unknown errors
      */
     ListResponse list(String query) throws Exception;
 
@@ -128,7 +128,7 @@ public interface PackageManagerClient {
      * @param includeVersions set to true to match on group:name up to the first hyphen in the "name-version"
      *                        string, which effectively matches against all versions of the package
      * @return package list service response
-     * @throws Exception
+     * @throws Exception for unknown errors
      */
     ListResponse list(PackId packageId, boolean includeVersions) throws Exception;
 
@@ -140,7 +140,7 @@ public interface PackageManagerClient {
      * @param packageId optional {@link PackId} providing the installation path. If {@code null},
      *                  the {@code file} will be identified and that {@link PackId} will be used.
      * @return standard simple service response
-     * @throws Exception
+     * @throws Exception for unknown errors
      */
     SimpleResponse upload(File file, boolean force, PackId packageId) throws Exception;
 
@@ -149,7 +149,7 @@ public interface PackageManagerClient {
      * @param packageId {@link PackId} representing package to be downloaded
      * @param toFile the file to save the downloaded binary data to.
      * @return a download service response
-     * @throws Exception
+     * @throws Exception for unknown errors
      */
     DownloadResponse download(PackId packageId, File toFile) throws Exception;
 
@@ -159,7 +159,7 @@ public interface PackageManagerClient {
      * @param toDirectory a base directory under which packages will be saved at a relative path matching
      *                    their CRX installation path, starting with "./etc/packages"
      * @return a download service response
-     * @throws Exception
+     * @throws Exception for unknown errors
      */
     DownloadResponse downloadToDirectory(PackId packageId, File toDirectory) throws Exception;
 
@@ -167,7 +167,7 @@ public interface PackageManagerClient {
      * Delete a package from the server. Does not uninstall the package.
      * @param packageId {@link PackId} representing package to be deleted
      * @return standard simple service response
-     * @throws Exception
+     * @throws Exception for unknown errors
      */
     SimpleResponse delete(PackId packageId) throws Exception;
 
@@ -175,7 +175,7 @@ public interface PackageManagerClient {
      * Replicates the package using the server's default replication agents
      * @param packageId {@link PackId} representing package to be replicated
      * @return simple service response
-     * @throws Exception
+     * @throws Exception for unknown errors
      */
     SimpleResponse replicate(PackId packageId) throws Exception;
 
@@ -183,7 +183,7 @@ public interface PackageManagerClient {
      * Prints the contents of the package to the response
      * @param packageId {@link PackId} representing package
      * @return detailed service response
-     * @throws Exception
+     * @throws Exception for unknown errors
      */
     DetailedResponse contents(PackId packageId) throws Exception;
 
@@ -192,7 +192,7 @@ public interface PackageManagerClient {
      * @param packageId {@link PackId} representing package
      * @param listener response progress listener
      * @return detailed service response
-     * @throws Exception
+     * @throws Exception for unknown errors
      */
     DetailedResponse contents(PackId packageId, ResponseProgressListener listener) throws Exception;
 
@@ -203,7 +203,7 @@ public interface PackageManagerClient {
      * @param autosave number of changes between session saves.
      * @param acHandling Access Control Handling value {@link ACHandling}. Unspecified if {@code null}.
      * @return detailed service response
-     * @throws Exception
+     * @throws Exception for unknown errors
      */
     DetailedResponse install(PackId packageId, boolean recursive, int autosave, ACHandling acHandling) throws Exception;
 
@@ -215,7 +215,7 @@ public interface PackageManagerClient {
      * @param acHandling Access Control Handling value {@link ACHandling}. Unspecified if {@code null}.
      * @param listener response progress listener
      * @return detailed service response
-     * @throws Exception
+     * @throws Exception for unknown errors
      */
     DetailedResponse install(PackId packageId, boolean recursive, int autosave,
                  ACHandling acHandling, ResponseProgressListener listener) throws Exception;
@@ -224,7 +224,7 @@ public interface PackageManagerClient {
      * Performs a dryRun of an installation of the specified package
      * @param packageId {@link PackId} representing package
      * @return detailed service response
-     * @throws Exception
+     * @throws Exception for unknown errors
      */
     DetailedResponse dryRun(PackId packageId) throws Exception;
 
@@ -233,7 +233,7 @@ public interface PackageManagerClient {
      * @param packageId {@link PackId} representing package
      * @param listener response progress listener
      * @return detailed service response
-     * @throws Exception
+     * @throws Exception for unknown errors
      */
     DetailedResponse dryRun(PackId packageId, ResponseProgressListener listener) throws Exception;
 
@@ -241,15 +241,16 @@ public interface PackageManagerClient {
      * Create a package with the specified packageId
      * @param packageId {@link PackId} representing new package
      * @return simple service response
-     * @throws Exception
+     * @throws Exception for unknown errors
      */
     SimpleResponse create(PackId packageId) throws Exception;
 
     /**
      * Update a package definition with the specified {@link WspFilter}
      * @param packageId {@link PackId} representing package to update
+     * @param filter new workspace filter
      * @return simple service response
-     * @throws Exception
+     * @throws Exception for unknown errors
      */
     SimpleResponse updateFilter(PackId packageId, WspFilter filter) throws Exception;
 
@@ -258,7 +259,7 @@ public interface PackageManagerClient {
      * @param packageId {@link PackId} representing package to move/rename
      * @param moveToId {@link PackId} package ID to move to
      * @return simple service response
-     * @throws Exception
+     * @throws Exception for unknown errors
      */
     SimpleResponse move(PackId packageId, PackId moveToId) throws Exception;
 
@@ -266,7 +267,7 @@ public interface PackageManagerClient {
      * Builds the specified package
      * @param packageId {@link PackId} representing package
      * @return detailed service response
-     * @throws Exception
+     * @throws Exception for unknown errors
      */
     DetailedResponse build(PackId packageId) throws Exception;
 
@@ -275,7 +276,7 @@ public interface PackageManagerClient {
      * @param packageId {@link PackId} representing package
      * @param listener response progress listener
      * @return detailed service response
-     * @throws Exception
+     * @throws Exception for unknown errors
      */
     DetailedResponse build(PackId packageId, ResponseProgressListener listener) throws Exception;
 
@@ -283,7 +284,7 @@ public interface PackageManagerClient {
      * Rewraps the specified package
      * @param packageId {@link PackId} representing package
      * @return detailed service response
-     * @throws Exception
+     * @throws Exception for unknown errors
      */
     DetailedResponse rewrap(PackId packageId) throws Exception;
 
@@ -292,7 +293,7 @@ public interface PackageManagerClient {
      * @param packageId {@link PackId} representing package
      * @param listener response progress listener
      * @return detailed service response
-     * @throws Exception
+     * @throws Exception for unknown errors
      */
     DetailedResponse rewrap(PackId packageId, ResponseProgressListener listener) throws Exception;
 
@@ -300,7 +301,7 @@ public interface PackageManagerClient {
      * Uninstalls the specified package
      * @param packageId {@link PackId} representing package
      * @return detailed service response
-     * @throws Exception
+     * @throws Exception for unknown errors
      */
     DetailedResponse uninstall(PackId packageId) throws Exception;
 
@@ -309,7 +310,7 @@ public interface PackageManagerClient {
      * @param packageId {@link PackId} representing package
      * @param listener response progress listener
      * @return detailed service response
-     * @throws Exception
+     * @throws Exception for unknown errors
      */
     DetailedResponse uninstall(PackId packageId, ResponseProgressListener listener) throws Exception;
 

@@ -147,7 +147,7 @@ public final class PackId implements Serializable, Comparable<PackId> {
      * which files it is scanning.
      * @param file the alleged content package file to identify
      * @return a PackId instance if identification was successful, or null if file is readable, but not a package.
-     * @throws IOException
+     * @throws IOException if package file cannot be opened
      */
     public static PackId identifyPackage(File file) throws IOException {
     	return identifyPackage(file, true);
@@ -158,7 +158,7 @@ public final class PackId implements Serializable, Comparable<PackId> {
      * @param file the alleged content package file to identify
      * @param strict set to true to require a META-INF/vault/properties.xml file.
      * @return a PackId instance if identification was successful, or null if file is readable, but not a package.
-     * @throws IOException
+     * @throws IOException if package file cannot be opened
      */
     public static PackId identifyPackage(File file, boolean strict) throws IOException {
         if (file == null) {

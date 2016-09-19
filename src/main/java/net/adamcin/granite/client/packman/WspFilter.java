@@ -251,7 +251,7 @@ public final class WspFilter implements Serializable {
      * 2.5. the first non-empty, non-comment line must define a new filter root
      * 3. each non-empty, non-comment line after a filter root that begins with a "+" or "-" defines an include or exclude rule, respectively.
      *
-     * @param text
+     * @param text raw text
      * @return a constructed {@link WspFilter} or null if parsing failed
      */
     public static WspFilter parseSimpleSpec(String text) {

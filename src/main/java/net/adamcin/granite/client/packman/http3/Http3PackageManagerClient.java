@@ -76,7 +76,9 @@ public final class Http3PackageManagerClient extends AbstractPackageManagerClien
     protected Either<? extends Exception, Boolean> checkServiceAvailability(final boolean checkTimeout,
                                                                             final long timeoutRemaining) {
 
-        final GetMethod request = new GetMethod(getJsonUrl());
+        final PostMethod request =
+                getResponseBuilder().forPackId(NO_SUCH_PACK_ID).withParam(KEY_CMD, CMD_DELETE).getJsonUrlRequest();
+
         final int oldTimeout = getClient().getHttpConnectionManager().getParams().getConnectionTimeout();
         if (checkTimeout) {
             getClient().getHttpConnectionManager().getParams().setConnectionTimeout((int) timeoutRemaining);
@@ -85,19 +87,16 @@ public final class Http3PackageManagerClient extends AbstractPackageManagerClien
 
         try {
             int status = getClient().executeMethod(request);
-
-            if (status == 401) {
-                return left(new UnauthorizedException("401 Unauthorized"), Boolean.class);
-            } else {
-                return right(Exception.class, status == 405);
-            }
+            SimpleResponse response = parseSimpleResponse(status,
+                    request.getStatusText(),
+                    request.getResponseBodyAsStream(),
+                    request.getResponseCharSet());
+            return right(Exception.class, response != null);
         } catch (IOException e) {
             return left(e, Boolean.class);
         } finally {
+            getClient().getHttpConnectionManager().getParams().setConnectionTimeout(oldTimeout);
             request.releaseConnection();
-            if (checkTimeout) {
-                getClient().getHttpConnectionManager().getParams().setConnectionTimeout(oldTimeout);
-            }
         }
     }
 
@@ -166,14 +165,15 @@ public final class Http3PackageManagerClient extends AbstractPackageManagerClien
     private DownloadResponse executeDownloadRequest(final HttpMethodBase request, final File outputFile) throws IOException {
         int status = getClient().executeMethod(request);
         return parseDownloadResponse(status,
-                                     request.getStatusText(),
-                                     request.getResponseBodyAsStream(),
-                                     outputFile);
+                request.getStatusText(),
+                request.getResponseBodyAsStream(),
+                outputFile);
     }
 
     @Override
-    protected ResponseBuilder getResponseBuilder() {
-        return new Http3ResponseBuilder().withParam(KEY_CHARSET, getCharset().name());
+    protected Http3ResponseBuilder getResponseBuilder() {
+        return new Http3ResponseBuilder().withParam(KEY_CHARSET, getCharset().name())
+                .withParam(KEY_NO_SLING, VAL_NO_SLING);
     }
 
     class Http3ResponseBuilder extends ResponseBuilder {
@@ -183,35 +183,34 @@ public final class Http3PackageManagerClient extends AbstractPackageManagerClien
         private Map<String, FilePart> fileParams = new HashMap<String, FilePart>();
 
         @Override
-        public ResponseBuilder forPackId(final PackId packId) {
+        public Http3ResponseBuilder forPackId(final PackId packId) {
             this.packId = packId;
             return this;
         }
 
         @Override
-        public ResponseBuilder withParam(String name, String value) {
+        public Http3ResponseBuilder withParam(String name, String value) {
             this.stringParams.put(name, new NameValuePair(name, value));
             return this;
         }
 
         @Override
-        public ResponseBuilder withParam(String name, boolean value) {
+        public Http3ResponseBuilder withParam(String name, boolean value) {
             return this.withParam(name, Boolean.toString(value));
         }
 
         @Override
-        public ResponseBuilder withParam(String name, int value) {
+        public Http3ResponseBuilder withParam(String name, int value) {
             return this.withParam(name, Integer.toString(value));
         }
 
         @Override
-        public ResponseBuilder withParam(String name, File value, String mimeType) throws IOException {
+        public Http3ResponseBuilder withParam(String name, File value, String mimeType) throws IOException {
             this.fileParams.put(name, new FilePart(name, value, mimeType, null));
             return this;
         }
 
-        @Override
-        public SimpleResponse getSimpleResponse() throws Exception {
+        PostMethod getJsonUrlRequest() {
             PostMethod request = new PostMethod(getJsonUrl(this.packId));
 
             List<Part> parts = new ArrayList<Part>();
@@ -226,6 +225,13 @@ public final class Http3PackageManagerClient extends AbstractPackageManagerClien
 
             request.setRequestEntity(new MultipartRequestEntity(parts.toArray(new Part[parts.size()]),
                     request.getParams()));
+
+            return request;
+        }
+
+        @Override
+        public SimpleResponse getSimpleResponse() throws Exception {
+            PostMethod request = getJsonUrlRequest();
 
             try {
                 return executeSimpleRequest(request);

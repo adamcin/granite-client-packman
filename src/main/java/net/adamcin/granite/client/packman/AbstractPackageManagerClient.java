@@ -96,6 +96,10 @@ public abstract class AbstractPackageManagerClient implements PackageManagerClie
     public static final String KEY_FILTER = "filter";
     public static final String KEY_CHARSET = "_charset_";
 
+    public static final String KEY_NO_SLING = "jcr:primaryType";
+    public static final String VAL_NO_SLING = "adamcin:NoSuchType";
+    public static final PackId NO_SUCH_PACK_ID = PackId.createPackId("adamcin", "no-such-package", "1.0.0");
+
     public static final String CMD_CONTENTS = "contents";
     public static final String CMD_INSTALL = "install";
     public static final String CMD_UNINSTALL = "uninstall";
@@ -440,14 +444,32 @@ public abstract class AbstractPackageManagerClient implements PackageManagerClie
     }
 
     protected static SimpleResponse parseSimpleResponse(final int statusCode,
+                                                        final String statusText,
+                                                        final InputStream stream,
+                                                        final String charset)
+            throws IOException {
+        return parseSimpleResponse(statusCode, statusText, stream, charset, false);
+    }
+
+    protected static SimpleResponse parseSimpleResponse(final int statusCode,
                                                        final String statusText,
                                                        final InputStream stream,
-                                                       final String charset)
+                                                       final String charset,
+                                                       final boolean nullOnNonIOError)
             throws IOException {
         if (statusCode == 400) {
-            throw new IOException("Command not supported by service");
+            String message = "Command not supported by service";
+            throw new IOException(message);
+        } else if (statusCode == 401) {
+            throw new UnauthorizedException("401 Unauthorized. Please login.");
         } else if (statusCode / 100 != 2) {
-            throw new IOException(Integer.toString(statusCode) + " " + statusText);
+            String message = Integer.toString(statusCode) + " " + statusText;
+            if (nullOnNonIOError) {
+                System.err.print(message);
+                return null;
+            } else {
+                throw new IOException(message);
+            }
         } else {
             try {
                 JSONTokener tokener = new JSONTokener(new InputStreamReader(stream,
@@ -460,7 +482,13 @@ public abstract class AbstractPackageManagerClient implements PackageManagerClie
 
                 return new SimpleResponseImpl(success, message, path);
             } catch (JSONException e) {
-                throw new IOException("Exception encountered while parsing response.", e);
+                String message = "Exception encountered while parsing response.";
+                if (nullOnNonIOError) {
+                    System.err.println(message);
+                    return null;
+                } else {
+                    throw new IOException(message, e);
+                }
             }
         }
     }

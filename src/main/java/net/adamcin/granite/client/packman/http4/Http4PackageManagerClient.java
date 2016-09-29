@@ -57,6 +57,7 @@ import org.apache.http.protocol.HttpContext;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -75,6 +76,20 @@ public final class Http4PackageManagerClient extends AbstractPackageManagerClien
                             statusLine.getReasonPhrase(),
                             response.getEntity().getContent(),
                             getResponseEncoding(response));
+                }
+            };
+
+    private static final ResponseHandler<SimpleResponse> SIMPLE_RESPONSE_NULLABLE_HANDLER =
+            new ResponseHandler<SimpleResponse>() {
+                public SimpleResponse handleResponse(final HttpResponse response)
+                        throws ClientProtocolException, IOException {
+                    StatusLine statusLine = response.getStatusLine();
+                    return parseSimpleResponse(
+                            statusLine.getStatusCode(),
+                            statusLine.getReasonPhrase(),
+                            response.getEntity().getContent(),
+                            getResponseEncoding(response),
+                            true);
                 }
             };
 
@@ -216,7 +231,12 @@ public final class Http4PackageManagerClient extends AbstractPackageManagerClien
     @Override
     protected Either<? extends Exception, Boolean> checkServiceAvailability(boolean checkTimeout,
                                                                             long timeoutRemaining) {
-        HttpUriRequest request = new HttpGet(getJsonUrl());
+        HttpUriRequest request;
+        try {
+            request = getResponseBuilder().getJsonUrlRequest();
+        } catch (UnsupportedEncodingException e) {
+            return left(e, Boolean.class);
+        }
 
         if (checkTimeout) {
             HttpConnectionParams.setConnectionTimeout(request.getParams(), (int) timeoutRemaining);
@@ -224,8 +244,8 @@ public final class Http4PackageManagerClient extends AbstractPackageManagerClien
         }
 
         try {
-            HttpResponse response = getClient().execute(request, AUTHORIZED_RESPONSE_HANDLER, getHttpContext());
-            return right(Exception.class, response.getStatusLine().getStatusCode() == 405);
+            SimpleResponse response = getClient().execute(request, SIMPLE_RESPONSE_HANDLER, getHttpContext());
+            return right(Exception.class, response != null);
         } catch (Exception e) {
             return left(e, Boolean.class);
         }
@@ -237,17 +257,17 @@ public final class Http4PackageManagerClient extends AbstractPackageManagerClien
 
     private DetailedResponse executeDetailedRequest(final HttpUriRequest request, final ResponseProgressListener listener) throws Exception {
         return getClient().execute(request, new ResponseHandler<DetailedResponse>() {
-                public DetailedResponse handleResponse(final HttpResponse response)
-                        throws ClientProtocolException, IOException {
-                    StatusLine statusLine = response.getStatusLine();
-                    return parseDetailedResponse(
-                            statusLine.getStatusCode(),
-                            statusLine.getReasonPhrase(),
-                            response.getEntity().getContent(),
-                            getResponseEncoding(response),
-                            listener);
-                }
-            }, getHttpContext());
+            public DetailedResponse handleResponse(final HttpResponse response)
+                    throws ClientProtocolException, IOException {
+                StatusLine statusLine = response.getStatusLine();
+                return parseDetailedResponse(
+                        statusLine.getStatusCode(),
+                        statusLine.getReasonPhrase(),
+                        response.getEntity().getContent(),
+                        getResponseEncoding(response),
+                        listener);
+            }
+        }, getHttpContext());
     }
 
     private ListResponse executeListRequest(HttpUriRequest request) throws Exception {
@@ -259,8 +279,9 @@ public final class Http4PackageManagerClient extends AbstractPackageManagerClien
     }
 
     @Override
-    protected ResponseBuilder getResponseBuilder() {
-        return new Http4ResponseBuilder().withParam(KEY_CHARSET, getCharset().name());
+    protected Http4ResponseBuilder getResponseBuilder() {
+        return new Http4ResponseBuilder().withParam(KEY_CHARSET, getCharset().name())
+                .withParam(KEY_NO_SLING, VAL_NO_SLING);
     }
 
     class Http4ResponseBuilder extends ResponseBuilder {
@@ -270,35 +291,34 @@ public final class Http4PackageManagerClient extends AbstractPackageManagerClien
         private Map<String, FileBody> fileParams = new HashMap<String, FileBody>();
 
         @Override
-        public ResponseBuilder forPackId(final PackId packId) {
+        public Http4ResponseBuilder forPackId(final PackId packId) {
             this.packId = packId;
             return this;
         }
 
         @Override
-        public ResponseBuilder withParam(String name, String value) {
+        public Http4ResponseBuilder withParam(String name, String value) {
             this.stringParams.put(name, new BasicNameValuePair(name, value));
             return this;
         }
 
         @Override
-        public ResponseBuilder withParam(String name, boolean value) {
+        public Http4ResponseBuilder withParam(String name, boolean value) {
             return this.withParam(name, Boolean.toString(value));
         }
 
         @Override
-        public ResponseBuilder withParam(String name, int value) {
+        public Http4ResponseBuilder withParam(String name, int value) {
             return this.withParam(name, Integer.toString(value));
         }
 
         @Override
-        public ResponseBuilder withParam(String name, File value, String mimeType) throws IOException {
+        public Http4ResponseBuilder withParam(String name, File value, String mimeType) throws IOException {
             this.fileParams.put(name, new FileBody(value, mimeType));
             return this;
         }
 
-        @Override
-        public SimpleResponse getSimpleResponse() throws Exception {
+        HttpPost getJsonUrlRequest() throws UnsupportedEncodingException {
             HttpPost request = new HttpPost(getJsonUrl(this.packId));
 
             MultipartEntity entity = new MultipartEntity();
@@ -313,6 +333,12 @@ public final class Http4PackageManagerClient extends AbstractPackageManagerClien
 
             request.setEntity(entity);
 
+            return request;
+        }
+
+        @Override
+        public SimpleResponse getSimpleResponse() throws Exception {
+            HttpPost request = getJsonUrlRequest();
             return executeSimpleRequest(request);
         }
 

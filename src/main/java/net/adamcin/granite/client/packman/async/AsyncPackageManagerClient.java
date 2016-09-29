@@ -63,6 +63,19 @@ public final class AsyncPackageManagerClient extends AbstractPackageManagerClien
                 }
             };
 
+    private static final AsyncCompletionHandler<SimpleResponse> SIMPLE_RESPONSE_NULLABLE_HANDLER =
+            new AsyncCompletionHandler<SimpleResponse>() {
+                @Override public SimpleResponse onCompleted(Response response) throws Exception {
+                    return AbstractPackageManagerClient.parseSimpleResponse(
+                            response.getStatusCode(),
+                            response.getStatusText(),
+                            response.getResponseBodyAsStream(),
+                            getResponseEncoding(response),
+                            true
+                    );
+                }
+            };
+
     private static final AsyncCompletionHandler<ListResponse> LIST_RESPONSE_HANDLER =
             new AsyncCompletionHandler<ListResponse>() {
                 @Override public ListResponse onCompleted(Response response) throws Exception {
@@ -287,23 +300,21 @@ public final class AsyncPackageManagerClient extends AbstractPackageManagerClien
      */
     protected final Either<? extends Exception, Boolean> checkServiceAvailability(final boolean checkTimeout,
                                                                                   final long timeoutRemaining) {
-        final Request request = this.addContext(this.client.prepareGet(getJsonUrl())).build();
+        final Request request = getResponseBuilder().forPackId(NO_SUCH_PACK_ID).withParam(KEY_CMD, CMD_DELETE)
+                .getJsonUrlRequest().build();
 
         try {
-            final ListenableFuture<Response> future = executeAnyRequest(request);
+            final ListenableFuture<SimpleResponse> future =
+                    this.client.executeRequest(request, SIMPLE_RESPONSE_NULLABLE_HANDLER);
 
-            Response response = null;
+            SimpleResponse response = null;
             if (checkTimeout) {
                 response = future.get(timeoutRemaining, TimeUnit.MILLISECONDS);
             } else {
                 response = future.get();
             }
 
-            if (response.getStatusCode() == 401) {
-                return left(new UnauthorizedException("401 Unauthorized. Please login."), Boolean.class);
-            } else {
-                return right(Exception.class, response.getStatusCode() == 405);
-            }
+            return right(Exception.class, response != null);
         } catch (TimeoutException e) {
             return left(new IOException("Service timeout exceeded."), Boolean.class);
         } catch (Exception e) {
@@ -374,8 +385,9 @@ public final class AsyncPackageManagerClient extends AbstractPackageManagerClien
     }
 
     @Override
-    protected ResponseBuilder getResponseBuilder() {
-        return new AsyncResponseBuilder().withParam(KEY_CHARSET, getCharset().name());
+    protected AsyncResponseBuilder getResponseBuilder() {
+        return new AsyncResponseBuilder().withParam(KEY_CHARSET, getCharset().name())
+                .withParam(KEY_NO_SLING, VAL_NO_SLING);
     }
 
     class AsyncResponseBuilder extends ResponseBuilder {
@@ -385,35 +397,34 @@ public final class AsyncPackageManagerClient extends AbstractPackageManagerClien
         private Map<String, FilePart> fileParams = new HashMap<String, FilePart>();
 
         @Override
-        protected ResponseBuilder forPackId(PackId packId) {
+        protected AsyncResponseBuilder forPackId(PackId packId) {
             this.packId = packId;
             return this;
         }
 
         @Override
-        public ResponseBuilder withParam(String name, String value) {
+        public AsyncResponseBuilder withParam(String name, String value) {
             this.stringParams.put(name, value);
             return this;
         }
 
         @Override
-        public ResponseBuilder withParam(String name, boolean value) {
+        public AsyncResponseBuilder withParam(String name, boolean value) {
             return this.withParam(name, Boolean.toString(value));
         }
 
         @Override
-        public ResponseBuilder withParam(String name, int value) {
+        public AsyncResponseBuilder withParam(String name, int value) {
             return this.withParam(name, Integer.toString(value));
         }
 
         @Override
-        public ResponseBuilder withParam(String name, File value, String mimeType) throws IOException {
+        public AsyncResponseBuilder withParam(String name, File value, String mimeType) throws IOException {
             this.fileParams.put(name, new FilePart(name, value, mimeType, null));
             return this;
         }
 
-        @Override
-        public SimpleResponse getSimpleResponse() throws Exception {
+        AsyncHttpClient.BoundRequestBuilder getJsonUrlRequest() {
             AsyncHttpClient.BoundRequestBuilder requestBuilder = buildSimpleRequest(packId);
             for (Map.Entry<String, String> param : this.stringParams.entrySet()) {
                 if (this.fileParams.isEmpty()) {
@@ -427,6 +438,12 @@ public final class AsyncPackageManagerClient extends AbstractPackageManagerClien
                 requestBuilder.addBodyPart(param.getValue());
             }
 
+            return requestBuilder;
+        }
+
+        @Override
+        public SimpleResponse getSimpleResponse() throws Exception {
+            AsyncHttpClient.BoundRequestBuilder requestBuilder = getJsonUrlRequest();
             return executeSimpleRequest(requestBuilder.build());
         }
 

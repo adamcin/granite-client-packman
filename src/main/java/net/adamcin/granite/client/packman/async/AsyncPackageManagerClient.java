@@ -28,6 +28,9 @@
 package net.adamcin.granite.client.packman.async;
 
 import com.ning.http.client.*;
+import com.ning.http.client.cookie.Cookie;
+import com.ning.http.client.multipart.FilePart;
+import com.ning.http.client.multipart.StringPart;
 import net.adamcin.granite.client.packman.AbstractPackageManagerClient;
 import net.adamcin.granite.client.packman.DetailedResponse;
 import net.adamcin.granite.client.packman.DownloadResponse;
@@ -190,10 +193,10 @@ public final class AsyncPackageManagerClient extends AbstractPackageManagerClien
     @Override
     public boolean login(String username, String password) throws IOException {
         Request request = getClient().preparePost(getBaseUrl() + LOGIN_PATH)
-                .addParameter(LOGIN_PARAM_USERNAME, username)
-                .addParameter(LOGIN_PARAM_PASSWORD, password)
-                .addParameter(LOGIN_PARAM_VALIDATE, LOGIN_VALUE_VALIDATE)
-                .addParameter(LOGIN_PARAM_CHARSET, LOGIN_VALUE_CHARSET).build();
+                .addFormParam(LOGIN_PARAM_USERNAME, username)
+                .addFormParam(LOGIN_PARAM_PASSWORD, password)
+                .addFormParam(LOGIN_PARAM_VALIDATE, LOGIN_VALUE_VALIDATE)
+                .addFormParam(LOGIN_PARAM_CHARSET, LOGIN_VALUE_CHARSET).build();
         try {
             ListenableFuture<Response> fResponse = getClient().executeRequest(request);
             Response response = getRequestTimeout() >= 0L ?
@@ -228,11 +231,11 @@ public final class AsyncPackageManagerClient extends AbstractPackageManagerClien
 
     private boolean loginLegacy(String username, String password) throws IOException {
         Request request = getClient().preparePost(getBaseUrl() + LEGACY_PATH)
-                .addParameter(LEGACY_PARAM_USERID, username)
-                .addParameter(LEGACY_PARAM_PASSWORD, password)
-                .addParameter(LEGACY_PARAM_WORKSPACE, LEGACY_VALUE_WORKSPACE)
-                .addParameter(LEGACY_PARAM_TOKEN, LEGACY_VALUE_TOKEN)
-                .addParameter(LOGIN_PARAM_CHARSET, LOGIN_VALUE_CHARSET).build();
+                .addFormParam(LEGACY_PARAM_USERID, username)
+                .addFormParam(LEGACY_PARAM_PASSWORD, password)
+                .addFormParam(LEGACY_PARAM_WORKSPACE, LEGACY_VALUE_WORKSPACE)
+                .addFormParam(LEGACY_PARAM_TOKEN, LEGACY_VALUE_TOKEN)
+                .addFormParam(LOGIN_PARAM_CHARSET, LOGIN_VALUE_CHARSET).build();
         try {
             ListenableFuture<Response> fResponse = getClient().executeRequest(request);
             Response response = getRequestTimeout() >= 0L ?
@@ -441,9 +444,9 @@ public final class AsyncPackageManagerClient extends AbstractPackageManagerClien
             AsyncHttpClient.BoundRequestBuilder requestBuilder = buildSimpleRequest(packId);
             for (Map.Entry<String, String> param : this.stringParams.entrySet()) {
                 if (this.fileParams.isEmpty()) {
-                    requestBuilder.addParameter(param.getKey(), param.getValue());
+                    requestBuilder.addFormParam(param.getKey(), param.getValue());
                 } else {
-                    requestBuilder.addQueryParameter(param.getKey(), param.getValue());
+                    requestBuilder.addQueryParam(param.getKey(), param.getValue());
                 }
             }
 
@@ -481,9 +484,9 @@ public final class AsyncPackageManagerClient extends AbstractPackageManagerClien
             AsyncHttpClient.BoundRequestBuilder requestBuilder = buildDetailedRequest(packId);
             for (Map.Entry<String, String> param : this.stringParams.entrySet()) {
                 if (this.fileParams.isEmpty()) {
-                    requestBuilder.addParameter(param.getKey(), param.getValue());
+                    requestBuilder.addFormParam(param.getKey(), param.getValue());
                 } else {
-                    requestBuilder.addQueryParameter(param.getKey(), param.getValue());
+                    requestBuilder.addQueryParam(param.getKey(), param.getValue());
                 }
             }
 
@@ -498,11 +501,11 @@ public final class AsyncPackageManagerClient extends AbstractPackageManagerClien
         protected ListResponse getListResponse() throws Exception {
             AsyncHttpClient.BoundRequestBuilder requestBuilder = buildListRequest();
             if (packId != null) {
-                requestBuilder.addQueryParameter(KEY_PATH, packId.getInstallationPath() + ".zip");
+                requestBuilder.addQueryParam(KEY_PATH, packId.getInstallationPath() + ".zip");
             }
 
             for (Map.Entry<String, String> param : this.stringParams.entrySet()) {
-                requestBuilder.addQueryParameter(param.getKey(), param.getValue());
+                requestBuilder.addQueryParam(param.getKey(), param.getValue());
             }
 
             return executeListRequest(requestBuilder.build());
@@ -512,11 +515,11 @@ public final class AsyncPackageManagerClient extends AbstractPackageManagerClien
         protected DownloadResponse getDownloadResponse(File file) throws Exception {
             AsyncHttpClient.BoundRequestBuilder requestBuilder = buildDownloadRequest();
             if (packId != null) {
-                requestBuilder.addQueryParameter(KEY_PATH, packId.getInstallationPath() + ".zip");
+                requestBuilder.addQueryParam(KEY_PATH, packId.getInstallationPath() + ".zip");
             }
 
             for (Map.Entry<String, String> param : this.stringParams.entrySet()) {
-                requestBuilder.addQueryParameter(param.getKey(), param.getValue());
+                requestBuilder.addQueryParam(param.getKey(), param.getValue());
             }
 
             return executeDownloadRequest(requestBuilder.build(), file);

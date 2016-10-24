@@ -101,8 +101,14 @@ public final class Http3PackageManagerClient extends AbstractPackageManagerClien
     }
 
     public void setBasicCredentials(String username, String password) {
+        getClient().getParams().setAuthenticationPreemptive(true);
         getClient().getState().setCredentials(AuthScope.ANY,
                 new UsernamePasswordCredentials(username, password));
+    }
+
+    @Override
+    public void preemptLogin(String username, String password) {
+        this.setBasicCredentials(username, password);
     }
 
     @Override

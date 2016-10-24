@@ -266,7 +266,29 @@ public abstract class AbstractPackageManagerClient implements PackageManagerClie
         return constructUrl(CONSOLE_UI_BASE_PATH, null, packageId.getInstallationPath() + ".zip");
     }
 
+    /**
+     * Login to CRX using a POST request /crx/j_security_check. Authentication for subsequent requests is expected to
+     * be handled by the underlying client implementation using a login-token cookie or equivalent client session
+     * context.
+     * @param username the username
+     * @param password the password
+     * @return true if authenticated in the affirmative, false if authenticated in the negative
+     * @throws IOException for "a failure to communicate"
+     */
     public abstract boolean login(String username, String password) throws IOException;
+
+    /**
+     * Enable preemptive authentication using Basic Auth credentials. Set either to null to disable preemptive
+     * authentication.
+     * Warning: if misused or used incorrectly the preemptive authentication can lead to significant security issues,
+     * such as sending user credentials in clear text to an unauthorized third party. Therefore, users are expected to
+     * evaluate potential benefits of preemptive authentication versus security risks in the context of their specific
+     * application environment.
+     *
+     * @param username the username
+     * @param password the password
+     */
+    public abstract void preemptLogin(String username, String password);
 
     /**
      * The CRX PackageManagerServlet does not support GET requests. The only use for GET is to check service

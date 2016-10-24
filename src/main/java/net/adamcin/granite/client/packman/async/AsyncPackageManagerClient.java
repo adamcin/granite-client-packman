@@ -213,6 +213,19 @@ public final class AsyncPackageManagerClient extends AbstractPackageManagerClien
         return false;
     }
 
+    @Override
+    public void preemptLogin(String username, String password) {
+         if (username == null || password == null) {
+             this.realm = null;
+         } else {
+             this.realm = new Realm.RealmBuilder()
+                     .setPrincipal(username)
+                     .setPassword(password)
+                     .setUsePreemptiveAuth(true)
+                     .build();
+         }
+    }
+
     private boolean loginLegacy(String username, String password) throws IOException {
         Request request = getClient().preparePost(getBaseUrl() + LEGACY_PATH)
                 .addParameter(LEGACY_PARAM_USERID, username)

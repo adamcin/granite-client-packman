@@ -36,19 +36,28 @@ import net.adamcin.granite.client.packman.ResponseProgressListener;
 import net.adamcin.granite.client.packman.SimpleResponse;
 import net.adamcin.granite.client.packman.UnauthorizedException;
 import org.apache.http.Header;
+import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.StatusLine;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.AuthCache;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.entity.mime.MultipartEntity;
 import org.apache.http.entity.mime.content.FileBody;
 import org.apache.http.entity.mime.content.StringBody;
+import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.AbstractHttpClient;
+import org.apache.http.impl.client.BasicAuthCache;
+import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.HttpConnectionParams;
@@ -139,6 +148,8 @@ public final class Http4PackageManagerClient extends AbstractPackageManagerClien
 
     private final AbstractHttpClient client;
     private HttpContext httpContext = new BasicHttpContext();
+    private CredentialsProvider preemptedProvider;
+    private AuthCache preemptedAuthCache;
 
     public Http4PackageManagerClient() {
         this(new DefaultHttpClient());
@@ -177,6 +188,44 @@ public final class Http4PackageManagerClient extends AbstractPackageManagerClien
         }
 
         return "UTF-8";
+    }
+
+    @Override
+    public void preemptLogin(String username, String password) {
+        HttpHost httpHost = HttpHost.create(getBaseUrl());
+        HttpClientContext ctx = HttpClientContext.adapt(this.httpContext);
+        CredentialsProvider currentProv = ctx.getCredentialsProvider();
+        AuthCache currentCache = ctx.getAuthCache();
+        if (username == null || password == null) {
+            if (this.preemptedProvider != null) {
+                ctx.setCredentialsProvider(this.preemptedProvider);
+                this.preemptedProvider = null;
+            } else if (currentProv instanceof BasicCredentialsProvider) {
+                currentProv.setCredentials(AuthScope.ANY, null);
+            }
+
+            if (this.preemptedAuthCache != null) {
+                ctx.setAuthCache(this.preemptedAuthCache);
+                this.preemptedAuthCache = null;
+            }
+        } else {
+            if (!(currentProv instanceof BasicCredentialsProvider)) {
+                this.preemptedProvider = currentProv;
+            }
+            if (!(currentCache instanceof BasicAuthCache)) {
+                this.preemptedAuthCache = currentCache;
+            }
+
+            CredentialsProvider basicProv = new BasicCredentialsProvider();
+            basicProv.setCredentials(AuthScope.ANY,
+                    new UsernamePasswordCredentials(username, password));
+
+            AuthCache authCache = new BasicAuthCache();
+            authCache.put(httpHost, new BasicScheme());
+            ctx.setCredentialsProvider(basicProv);
+            ctx.setAuthCache(authCache);
+
+        }
     }
 
     @Override

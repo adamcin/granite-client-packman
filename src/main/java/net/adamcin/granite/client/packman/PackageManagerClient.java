@@ -93,9 +93,10 @@ public interface PackageManagerClient {
     /**
      * Wait for service availability. Use this method between installing a package and any calling
      * any other POST-based service operation
+     * @return true if service availability was successfully determined, false otherwise
      * @throws Exception on timeout, interruption, or IOException
      */
-    void waitForService() throws Exception;
+    boolean waitForService() throws Exception;
 
     /**
      * Checks if a package with the specified packageId has already been uploaded to the server.

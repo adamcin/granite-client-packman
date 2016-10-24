@@ -293,6 +293,8 @@ public abstract class AbstractPackageManagerClient implements PackageManagerClie
     /**
      * The CRX PackageManagerServlet does not support GET requests. The only use for GET is to check service
      * availability. If anything other than 401 or 405 is returned, the service should be considered unavailable.
+     *
+     * Alternatively, a POST cmd to delete a non-existing package should
      * @param checkTimeout set to true to enforce a timeout
      * @param timeoutRemaining remaining timeout in milliseconds
      * @return either a throwable or a boolean
@@ -844,7 +846,7 @@ public abstract class AbstractPackageManagerClient implements PackageManagerClie
     /**
      * {@inheritDoc}
      */
-    public final void waitForService() throws Exception {
+    public final boolean waitForService() throws Exception {
         if (waitDelay >= 0L) {
             Thread.sleep(waitDelay);
         }
@@ -863,6 +865,7 @@ public abstract class AbstractPackageManagerClient implements PackageManagerClie
             }
             tries++;
         } while (!resp.isLeft() && !resp.getRight());
+        return resp.getRight();
     }
 
     /**

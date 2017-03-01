@@ -28,6 +28,7 @@
 package net.adamcin.granite.client.packman.validation;
 
 import net.adamcin.commons.testing.junit.FailUtil;
+import net.adamcin.granite.client.packman.ACHandling;
 import net.adamcin.granite.client.packman.WspFilter;
 import org.apache.commons.io.IOUtils;
 import org.apache.jackrabbit.vault.fs.api.WorkspaceFilter;
@@ -121,6 +122,40 @@ public class PackageValidatorTest {
             expectReasonForCheckExtensions(hasZip, noZips,
                     ValidationResult.Reason.FORBIDDEN_EXTENSION);
 
+        } catch (IOException e) {
+            FailUtil.sprintFail(e);
+        }
+    }
+
+    @Test
+    public void testPathsDeniedForInclusion() {
+        try {
+            File hasJar = new File("target/recap-0.8.0.zip");
+            generatePackageFile("/recap-0.8.0.zip", hasJar);
+            DefaultValidationOptions opts = new DefaultValidationOptions();
+            opts.setPathsDeniedForInclusion(Arrays.asList("/libs/recap/install", "/libs/recap/components/addressbook"));
+            ValidationResult result = PackageValidator.validate(hasJar, opts);
+            assertEquals("Should deny this path", ValidationResult.Reason.DENIED_PATH_INCLUSION,
+                    result.getReason());
+        } catch (IOException e) {
+            FailUtil.sprintFail(e);
+        }
+    }
+
+    @Test
+    public void testForbiddenACHandlingModes() {
+        try {
+            File recap = new File("target/recap-0.8.0.zip");
+            generatePackageFile("/recap-0.8.0.zip", recap);
+            DefaultValidationOptions opts = new DefaultValidationOptions();
+            opts.setForbiddenACHandlingModes(Arrays.asList(
+                    ACHandling.IGNORE, ACHandling.MERGE, ACHandling.MERGE_PRESERVE,
+                    ACHandling.OVERWRITE, ACHandling.CLEAR));
+            ValidationResult result = PackageValidator.validate(recap, opts);
+            assertEquals("Should forbid this handling", ValidationResult.Reason.FORBIDDEN_ACHANDLING,
+                    result.getReason());
+            assertEquals("Should forbid this handling", ACHandling.IGNORE,
+                    result.getForbiddenACHandlingMode());
         } catch (IOException e) {
             FailUtil.sprintFail(e);
         }

@@ -27,6 +27,7 @@
 
 package net.adamcin.granite.client.packman.validation;
 
+import net.adamcin.granite.client.packman.ACHandling;
 import net.adamcin.granite.client.packman.PackId;
 import net.adamcin.granite.client.packman.WspFilter;
 import net.adamcin.granite.client.packman.WspFilter.Root;
@@ -36,6 +37,8 @@ import org.apache.jackrabbit.vault.fs.api.PathFilterSet;
 import org.apache.jackrabbit.vault.fs.api.WorkspaceFilter;
 import org.apache.jackrabbit.vault.fs.config.DefaultWorkspaceFilter;
 import org.apache.jackrabbit.vault.fs.filter.DefaultPathFilter;
+import org.apache.jackrabbit.vault.fs.io.AccessControlHandling;
+import org.apache.jackrabbit.vault.fs.io.ImportOptions;
 import org.apache.jackrabbit.vault.packaging.PackageManager;
 import org.apache.jackrabbit.vault.packaging.PackagingService;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
@@ -44,6 +47,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -109,6 +113,21 @@ public final class PackageValidator {
                 return new ValidationResult(Reason.INVALID_META_INF);
             }
 
+            ValidationResult acHandlingResult = checkACHandling(options, pack);
+            if (acHandlingResult.getReason() != Reason.SUCCESS) {
+                return acHandlingResult;
+            }
+
+            ValidationResult forbiddenFilterRootPrefixResult = checkForbiddenFilterRootPrefix(options, pack);
+            if (forbiddenFilterRootPrefixResult.getReason() != Reason.SUCCESS) {
+                return forbiddenFilterRootPrefixResult;
+            }
+
+            ValidationResult deniedPathInclusionResult = checkDeniedPathInclusion(options, pack);
+            if (deniedPathInclusionResult.getReason() != Reason.SUCCESS) {
+                return deniedPathInclusionResult;
+            }
+
             WspFilter archiveFilter =
                     WspFilter.adaptWorkspaceFilter(
                             pack.getMetaInf().getFilter());
@@ -121,6 +140,73 @@ public final class PackageValidator {
                 pack.close();
             }
         }
+    }
+
+    private static ACHandling modeForJKMode(AccessControlHandling jkMode) {
+        if (jkMode == null) {
+            return null;
+        } else {
+            switch (jkMode) {
+                case IGNORE: return ACHandling.IGNORE;
+                case OVERWRITE: return ACHandling.OVERWRITE;
+                case MERGE: return ACHandling.MERGE;
+                case MERGE_PRESERVE: return ACHandling.MERGE_PRESERVE;
+                case CLEAR: return ACHandling.CLEAR;
+                default: return null;
+            }
+        }
+    }
+
+    protected static ValidationResult checkACHandling(ValidationOptions options, VaultPackage pack) {
+        List<ACHandling> forbidden = options.getForbiddenACHandlingModes();
+        ACHandling jkMode = modeForJKMode(pack.getACHandling());
+        if (forbidden != null && jkMode != null) {
+            if (forbidden.contains(jkMode)) {
+                return ValidationResult.forbiddenACHandlingMode(jkMode);
+            }
+        }
+        return ValidationResult.success();
+    }
+
+
+    protected static ValidationResult checkForbiddenFilterRootPrefix(ValidationOptions options, VaultPackage pack) {
+        List<String> forbiddenFilterRootPrefixes = options.getForbiddenFilterRootPrefixes();
+        if (forbiddenFilterRootPrefixes != null) {
+            for (String rootPrefix : forbiddenFilterRootPrefixes) {
+                String trimmed = rootPrefix.trim();
+                if (trimmed.isEmpty()) {
+                    continue;
+                }
+                final String noTrailingSlash = trimmed.replaceAll("/*$", "").replaceAll("^/*", "/");
+                final String withTrailingSlash = noTrailingSlash.replaceAll("/*$", "/");
+                for (PathFilterSet filterSet : pack.getMetaInf().getFilter().getFilterSets()) {
+                    if (filterSet.getRoot().equals(noTrailingSlash)
+                            || filterSet.getRoot().startsWith(withTrailingSlash)) {
+                        WspFilter.Root invalidRoot = WspFilter.adaptFilterSet(filterSet);
+                        return ValidationResult.forbiddenRootPrefix(rootPrefix, invalidRoot);
+                    }
+                }
+            }
+        }
+
+        return ValidationResult.success();
+    }
+
+    protected static ValidationResult checkDeniedPathInclusion(ValidationOptions options, VaultPackage pack) {
+        List<String> pathsDeniedForInclusion = options.getPathsDeniedForInclusion();
+        if (pathsDeniedForInclusion != null) {
+            for (String path : pathsDeniedForInclusion) {
+                if (pack.getMetaInf().getFilter().contains(path)) {
+                    WspFilter.Root invalidRoot = null;
+                    PathFilterSet filter = pack.getMetaInf().getFilter().getCoveringFilterSet(path);
+                    if (filter != null) {
+                        invalidRoot = WspFilter.adaptFilterSet(filter);
+                    }
+                    return ValidationResult.deniedPathInclusion(path, invalidRoot);
+                }
+            }
+        }
+        return ValidationResult.success();
     }
 
     protected static ValidationResult checkFilter(ValidationOptions options, WspFilter archiveFilter) {
@@ -159,6 +245,10 @@ public final class PackageValidator {
                     String entryName = entry.getName();
                     for (String _ext : forbiddenExtensions) {
                         String ext = _ext.trim();
+                        if (ext.isEmpty()) {
+                            continue;
+                        }
+
                         if (!ext.startsWith(".")) {
                             ext = "." + ext;
                         }

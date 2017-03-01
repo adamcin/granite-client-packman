@@ -27,9 +27,10 @@
 
 package net.adamcin.granite.client.packman.validation;
 
-import net.adamcin.granite.client.packman.WspFilter;
-
 import java.util.List;
+
+import net.adamcin.granite.client.packman.ACHandling;
+import net.adamcin.granite.client.packman.WspFilter;
 
 
 /**
@@ -60,4 +61,24 @@ public interface ValidationOptions {
      * @return a list of extensions, or null
      */
     List<String> getForbiddenExtensions();
+
+    /**
+     * Define a list of forbidden {@link ACHandling} modes, such as OVERWRITE, MERGE, and CLEAR.
+     * @return a list of {@link ACHandling} modes
+     */
+    List<ACHandling> getForbiddenACHandlingModes();
+
+    /**
+     * Define a list of forbidden filter root path prefixes, such as {@code /libs}, {@code /apps/system},
+     * {@code /home}, etc.
+     * @return list of forbidden filter root path prefixes.
+     */
+    List<String> getForbiddenFilterRootPrefixes();
+
+    /**
+     * Define a list of paths which a package filter must exclude to be considered valid.
+     * @return a list of paths to deny inclusion
+     */
+    List<String> getPathsDeniedForInclusion();
+
 }

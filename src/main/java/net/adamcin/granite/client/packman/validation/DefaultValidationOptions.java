@@ -27,6 +27,7 @@
 
 package net.adamcin.granite.client.packman.validation;
 
+import net.adamcin.granite.client.packman.ACHandling;
 import net.adamcin.granite.client.packman.WspFilter;
 
 import java.io.Serializable;
@@ -37,11 +38,14 @@ import java.util.List;
  */
 public class DefaultValidationOptions implements ValidationOptions, Serializable {
 
-    private static final long serialVersionUID = -2307974477755564878L;
+    private static final long serialVersionUID = -2307974477755564879L;
 
     private WspFilter validationFilter;
     private boolean allowNonCoveredRoots;
     private List<String> forbiddenExtensions;
+    private List<ACHandling> forbiddenACHandlingModes;
+    private List<String> pathsDeniedForInclusion;
+    private List<String> forbiddenFilterRootPrefixes;
 
     /**
      * {@inheritDoc}
@@ -76,6 +80,42 @@ public class DefaultValidationOptions implements ValidationOptions, Serializable
 
     public DefaultValidationOptions setForbiddenExtensions(List<String> forbiddenExtensions) {
         this.forbiddenExtensions = forbiddenExtensions;
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public List<ACHandling> getForbiddenACHandlingModes() {
+        return this.forbiddenACHandlingModes;
+    }
+
+    public DefaultValidationOptions setForbiddenACHandlingModes(List<ACHandling> forbiddenACHandlingModes) {
+        this.forbiddenACHandlingModes = forbiddenACHandlingModes;
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public List<String> getPathsDeniedForInclusion() {
+        return this.pathsDeniedForInclusion;
+    }
+
+    public DefaultValidationOptions setPathsDeniedForInclusion(List<String> pathsDeniedForInclusion) {
+        this.pathsDeniedForInclusion = pathsDeniedForInclusion;
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public List<String> getForbiddenFilterRootPrefixes() {
+        return forbiddenFilterRootPrefixes;
+    }
+
+    public DefaultValidationOptions setForbiddenFilterRootPrefixes(List<String> forbiddenFilterRootPrefixes) {
+        this.forbiddenFilterRootPrefixes = forbiddenFilterRootPrefixes;
         return this;
     }
 }

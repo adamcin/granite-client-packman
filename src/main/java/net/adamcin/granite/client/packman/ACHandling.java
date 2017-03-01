@@ -30,5 +30,56 @@ package net.adamcin.granite.client.packman;
 import java.io.Serializable;
 
 public enum ACHandling implements Serializable {
-    IGNORE, OVERWRITE, MERGE, CLEAR
+    /**
+     * Ignores the packaged access control and leaves the target unchanged.
+     */
+    IGNORE("Ignore","ignore"),
+
+    /**
+     * Applies the access control provided with the package to the target. this also removes existing access control.
+     */
+    OVERWRITE("Overwrite","overwrite"),
+
+    /**
+     * Merge access control provided with the package with the one in the content by replacing the access control
+     * entries of corresponding principals (i.e. package first). It never alters access control entries of principals
+     * not present in the package.
+     */
+    MERGE("Merge","merge"),
+
+    /**
+     * Merge access control in the content with the one provided with the package by adding the access control entries
+     * of principals not present in the content (i.e. content first). It never alters access control entries already
+     * existing in the content.
+     */
+    MERGE_PRESERVE("MergePreserve","merge_preserve"),
+
+    /**
+     * Clears all access control on the target system.
+     */
+    CLEAR("Clear","clear");
+
+    private String label;
+    private String propertyValue;
+
+    ACHandling(String label, String propertyValue) {
+        this.label = label;
+        this.propertyValue = propertyValue;
+    }
+
+    /**
+     * Get the Package Manager display label for the ACHandling mode.
+     * @return the Package Manager display label for the ACHandling mode.
+     */
+    public String getLabel() {
+        return label;
+    }
+
+    /**
+     * Get the associated {@code acHandling} property value.
+     * @return the associated {@code acHandling} property value.
+     */
+    public String getPropertyValue() {
+        return propertyValue;
+    }
 }

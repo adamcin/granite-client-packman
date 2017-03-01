@@ -27,6 +27,7 @@
 
 package net.adamcin.granite.client.packman.validation;
 
+import net.adamcin.granite.client.packman.ACHandling;
 import net.adamcin.granite.client.packman.WspFilter;
 
 import java.io.IOException;
@@ -42,24 +43,28 @@ public final class ValidationResult implements Serializable {
 
     private static final long serialVersionUID = 3183860341927890671L;
 
-    public static enum Reason {
+    public enum Reason {
         SUCCESS,
         FORBIDDEN_EXTENSION,
         FAILED_TO_ID,
         FAILED_TO_OPEN,
         INVALID_META_INF,
         ROOT_NOT_ALLOWED,
-        ROOT_MISSING_RULES
+        ROOT_MISSING_RULES,
+        FORBIDDEN_ACHANDLING,
+        FORBIDDEN_FILTER_ROOT_PREFIX,
+        DENIED_PATH_INCLUSION
     }
 
     private final Reason reason;
     private final String forbiddenEntry;
+    private final ACHandling forbiddenACHandlingMode;
     private final WspFilter.Root invalidRoot;
     private final WspFilter.Root coveringRoot;
     private final IOException cause;
 
     protected ValidationResult(Reason reason) {
-        this(reason, null, null);
+        this(reason, (WspFilter.Root) null, null);
     }
 
     protected ValidationResult(Reason reason, WspFilter.Root invalidRoot, WspFilter.Root coveringRoot) {
@@ -68,6 +73,7 @@ public final class ValidationResult implements Serializable {
         this.coveringRoot = coveringRoot;
         this.cause = null;
         this.forbiddenEntry = null;
+        this.forbiddenACHandlingMode = null;
     }
 
     protected ValidationResult(Reason reason, IOException cause) {
@@ -76,6 +82,7 @@ public final class ValidationResult implements Serializable {
         this.coveringRoot = null;
         this.cause = cause;
         this.forbiddenEntry = null;
+        this.forbiddenACHandlingMode = null;
     }
 
     protected ValidationResult(Reason reason, String forbiddenEntry) {
@@ -84,6 +91,25 @@ public final class ValidationResult implements Serializable {
         this.coveringRoot = null;
         this.cause = null;
         this.forbiddenEntry = forbiddenEntry;
+        this.forbiddenACHandlingMode = null;
+    }
+
+    protected ValidationResult(Reason reason, String forbiddenEntry, WspFilter.Root invalidRoot) {
+        this.reason = reason;
+        this.invalidRoot = invalidRoot;
+        this.coveringRoot = null;
+        this.cause = null;
+        this.forbiddenEntry = forbiddenEntry;
+        this.forbiddenACHandlingMode = null;
+    }
+
+    protected ValidationResult(Reason reason, ACHandling forbiddenACHandlingMode) {
+        this.reason = reason;
+        this.invalidRoot = null;
+        this.coveringRoot = null;
+        this.cause = null;
+        this.forbiddenEntry = null;
+        this.forbiddenACHandlingMode = forbiddenACHandlingMode;
     }
 
     public Reason getReason() {
@@ -104,6 +130,10 @@ public final class ValidationResult implements Serializable {
 
     public String getForbiddenEntry() {
         return forbiddenEntry;
+    }
+
+    public ACHandling getForbiddenACHandlingMode() {
+        return forbiddenACHandlingMode;
     }
 
     public static ValidationResult success() {
@@ -132,5 +162,17 @@ public final class ValidationResult implements Serializable {
 
     public static ValidationResult forbiddenExtension(String forbiddenEntry) {
         return new ValidationResult(Reason.FORBIDDEN_EXTENSION, forbiddenEntry);
+    }
+
+    public static ValidationResult forbiddenACHandlingMode(ACHandling forbiddenMode) {
+        return new ValidationResult(Reason.FORBIDDEN_ACHANDLING, forbiddenMode);
+    }
+
+    public static ValidationResult deniedPathInclusion(String forbiddenPath, WspFilter.Root invalidRoot) {
+        return new ValidationResult(Reason.DENIED_PATH_INCLUSION, forbiddenPath, invalidRoot);
+    }
+
+    public static ValidationResult forbiddenRootPrefix(String forbiddenEntry, WspFilter.Root invalidRoot) {
+        return new ValidationResult(Reason.FORBIDDEN_FILTER_ROOT_PREFIX, forbiddenEntry, invalidRoot);
     }
 }

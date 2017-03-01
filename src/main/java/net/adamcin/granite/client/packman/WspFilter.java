@@ -322,7 +322,8 @@ public final class WspFilter implements Serializable {
                 rules.add(new Rule(filterEntry.isInclude(),
                         ((DefaultPathFilter) filterEntry.getFilter()).getPattern()));
             } else {
-                throw new IllegalArgumentException(String.format("Only DefaultPathFilter entries are allowed. [error in filter root=%s]", path));
+                throw new IllegalArgumentException(String
+                        .format("Only DefaultPathFilter entries are allowed. [error in filter root=%s]", path));
             }
         }
         return new Root(path, rules);

@@ -37,7 +37,7 @@
 
     <groupId>net.adamcin.granite</groupId>
     <artifactId>granite-client-packman</artifactId>
-    <version>0.8.1-SNAPSHOT</version>
+    <version>0.8.1</version>
     <packaging>jar</packaging>
 
     <name>Granite Client - Package Manager</name>
@@ -65,7 +65,7 @@
         <url>https://github.com/adamcin/${project.artifactId}</url>
         <developerConnection>scm:git:git@github.com:adamcin/${project.artifactId}.git</developerConnection>
         <connection>scm:git://github.com/adamcin/${project.artifactId}.git</connection>
-      <tag>HEAD</tag>
+      <tag>granite-client-packman-0.8.1</tag>
   </scm>
 
     <issueManagement>

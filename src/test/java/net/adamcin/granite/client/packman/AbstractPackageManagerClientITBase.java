@@ -52,6 +52,8 @@ public abstract class AbstractPackageManagerClientITBase {
     public final Logger LOGGER = LoggerFactory.getLogger(getClass());
     public final ResponseProgressListener LISTENER = new LoggingListener(LOGGER, LoggingListener.Level.DEBUG);
 
+    public final static String USER = "aurl-unsafepassword";
+    public final static String PASS = "oGQ6H1OFP?7o=e";
     protected abstract AbstractPackageManagerClient getClientImplementation();
 
     public void generateTestPackage(File packageFile) throws IOException {
@@ -79,7 +81,7 @@ public abstract class AbstractPackageManagerClientITBase {
         TestBody.test(new PackmgrClientTestBody() {
             @Override
             protected void execute() throws Exception {
-                assertTrue("Login using default credentials", client.login("admin", "admin"));
+                assertTrue("Login using default credentials", client.login(USER, PASS));
 
             }
         });
@@ -97,13 +99,13 @@ public abstract class AbstractPackageManagerClientITBase {
     public void testWaitForService() {
         TestBody.test(new PackmgrClientTestBody() {
             @Override protected void execute() throws Exception {
-                client.login("admin", "admin");
+                client.login(USER, PASS);
                 client.setServiceTimeout(5000L);
                 boolean ex = false;
                 try {
                     client.waitForService();
                 } catch (Exception e) {
-                    LOGGER.debug("Exception: " + e.getMessage());
+                    LOGGER.info("Exception: ", e);
                     ex = true;
                 }
 
@@ -116,9 +118,10 @@ public abstract class AbstractPackageManagerClientITBase {
                 try {
                     client.waitForService();
                 } catch (Exception e) {
-                    LOGGER.debug("Exception: " + e.getMessage());
+                    LOGGER.info("Exception: ", e);
                     ex = true;
-                    assertTrue("Waited long enough", System.currentTimeMillis() > stop);
+                    long current = System.currentTimeMillis();
+                    assertTrue(String.format("Waited long enough; current: %d, stop: %d", current, stop), current > stop);
                 }
 
                 assertTrue("Exception should be thrown for baseUrl: " + client.getBaseUrl(), ex);
@@ -130,7 +133,7 @@ public abstract class AbstractPackageManagerClientITBase {
     public void testExistsOnServer() {
         TestBody.test(new PackmgrClientTestBody() {
             @Override protected void execute() throws Exception {
-                client.login("admin", "admin");
+                client.login(USER, PASS);
                 File file = new File("target/test-packmgr-client-1.0.zip");
 
                 generateTestPackage(file);
@@ -157,7 +160,7 @@ public abstract class AbstractPackageManagerClientITBase {
     public void testCreate() {
         TestBody.test(new PackmgrClientTestBody() {
             @Override protected void execute() throws Exception {
-                client.login("admin", "admin");
+                client.login(USER, PASS);
 
                 PackId id = PackId.createPackId("test-packmgr", "test-create-package", "1.0");
                 if (client.existsOnServer(id)) {
@@ -181,7 +184,7 @@ public abstract class AbstractPackageManagerClientITBase {
     public void testMove() {
         TestBody.test(new PackmgrClientTestBody() {
             @Override protected void execute() throws Exception {
-                client.login("admin", "admin");
+                client.login(USER, PASS);
 
                 PackId id = PackId.createPackId("test-packmgr", "test-move", "1.0");
                 PackId moveToId = PackId.createPackId("test-packmgr", "move-to", "1.0");
@@ -214,7 +217,7 @@ public abstract class AbstractPackageManagerClientITBase {
     public void testUpdateFilter() {
         TestBody.test(new PackmgrClientTestBody() {
             @Override protected void execute() throws Exception {
-                client.login("admin", "admin");
+                client.login(USER, PASS);
 
                 PackId id = PackId.createPackId("test-packmgr", "test-update-filter", "1.0");
                 if (client.existsOnServer(id)) {

@@ -855,11 +855,16 @@ public abstract class AbstractPackageManagerClient implements PackageManagerClie
         final long stop = System.currentTimeMillis() + serviceTimeout;
         Either<? extends Exception, Boolean> resp;
         do {
-            if (checkTimeout && stop <= System.currentTimeMillis()) {
+            final long current = System.currentTimeMillis();
+            final long sleepy = Math.min(5, tries) * 1000L;
+
+            Thread.sleep(sleepy);
+
+            if (checkTimeout && stop <= (current + sleepy)) {
                 throw new IOException("Service timeout exceeded.");
             }
-            Thread.sleep(Math.min(5, tries) * 1000L);
-            resp = checkServiceAvailability(checkTimeout, stop - System.currentTimeMillis());
+
+            resp = checkServiceAvailability(checkTimeout, stop - (current + sleepy));
             if (resp.isLeft()) {
                 throw resp.getLeft();
             }

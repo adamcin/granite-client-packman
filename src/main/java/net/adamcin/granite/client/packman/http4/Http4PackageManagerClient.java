@@ -282,7 +282,7 @@ public final class Http4PackageManagerClient extends AbstractPackageManagerClien
                                                                             long timeoutRemaining) {
         HttpUriRequest request;
         try {
-            request = getResponseBuilder().getJsonUrlRequest();
+            request = getResponseBuilder().forPackId(NO_SUCH_PACK_ID).withParam(KEY_CMD, CMD_DELETE).getJsonUrlRequest();
         } catch (UnsupportedEncodingException e) {
             return left(e, Boolean.class);
         }
@@ -293,7 +293,7 @@ public final class Http4PackageManagerClient extends AbstractPackageManagerClien
         }
 
         try {
-            SimpleResponse response = getClient().execute(request, SIMPLE_RESPONSE_HANDLER, getHttpContext());
+            SimpleResponse response = getClient().execute(request, SIMPLE_RESPONSE_NULLABLE_HANDLER, getHttpContext());
             return right(Exception.class, response != null);
         } catch (Exception e) {
             return left(e, Boolean.class);

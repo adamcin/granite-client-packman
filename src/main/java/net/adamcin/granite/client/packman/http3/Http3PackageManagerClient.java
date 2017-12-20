@@ -90,7 +90,8 @@ public final class Http3PackageManagerClient extends AbstractPackageManagerClien
             SimpleResponse response = parseSimpleResponse(status,
                     request.getStatusText(),
                     request.getResponseBodyAsStream(),
-                    request.getResponseCharSet());
+                    request.getResponseCharSet(),
+                    true);
             return right(Exception.class, response != null);
         } catch (IOException e) {
             return left(e, Boolean.class);
